@@ -1,0 +1,3399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPG da Academia - Versão Combate Contínuo</title>
+    <style>
+        /* Estilos Globais */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        .soda-projectile {
+         background-image: url('soda.png');
+        }
+
+        .burger-projectile {
+        background-image: url('lanche.png');
+        }
+        @keyframes victory-glow {
+    0% { box-shadow: 0 0 20px gold; }
+    50% { box-shadow: 0 0 50px #ffd700, 0 0 100px #ffaa00; }
+    100% { box-shadow: 0 0 20px gold; }
+}
+/* Adicione isto ao final dos estilos */
+#victory-screen {
+    position: fixed; /* Não usa absolute */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95); /* Fundo escuro */
+    z-index: 1000; /* Deve ser maior que outros elementos */
+    display: none; /* Inicialmente oculto */
+    justify-content: center;
+    align-items: center;
+}
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+@keyframes victory-entrance {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Garantir que elementos estão acima do fundo */
+#victory-screen h2, #victory-screen p, #restart-btn {
+    position: relative;
+    z-index: 1001;
+}
+#victory-screen {
+    background: radial-gradient(circle, rgba(0,50,0,0.95) 0%, rgba(0,20,0,0.9) 100%);
+}
+
+        .audio-theme {
+            display: none;
+}
+       
+        .damage-effect {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.5em;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 1px 1px 3px black;
+            transition: all 0.5s;
+            animation: floatUp 1s forwards;
+        }
+
+        .critical-effect {
+            color: #FFD700;
+            font-size: 2em;
+            text-shadow: 0 0 5px red, 0 0 10px orange;
+        }
+        /* Menu Inicial Aprimorado */
+        #main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+            background-image: url('https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-blend-mode: overlay;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #main-menu h1 {
+            color: #ffaa00;
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 10px #000, 0 0 20px rgba(255, 170, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .class-selection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            max-width: 900px;
+            margin-bottom: 30px;
+        }
+        
+        .class-card {
+            width: 200px;
+            padding: 20px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid #444;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 165, 0, 0.3);
+            border-color: #ffaa00;
+        }
+        
+        .class-card.selected {
+            border-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+        }
+        
+        .class-card h3 {
+            color: #ffaa00;
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+        
+        .class-card .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        
+        .class-card .stats span {
+            display: flex;
+            align-items: center;
+        }
+        
+        .class-card .special {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .class-card .special h4 {
+            margin: 0 0 8px 0;
+            color: #4CAF50;
+            font-size: 1em;
+        }
+        
+        #start-button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            background: linear-gradient(to right, #ff8a00, #ffaa00);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #222;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.7);
+            animation: pulse 2s infinite;
+        }
+        
+        #start-button:hover {
+            background: linear-gradient(to right, #ffaa00, #ffc107);
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 170, 0, 0.9);
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        /* Jogo Principal */
+        #game-container {
+            position: relative;
+            width: 1024px;
+            height: 920px;
+            margin: 0 auto;
+            background-color: #333;
+            overflow: hidden;
+            display: none;
+            background-image: url('academia.png');
+            background-size: cover;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+        
+        #player {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-image: url(bodybuilder.png);
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.7);
+            transition: transform 0.2s;
+        }
+        
+        .enemy {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    background-image: url('cariani.jpeg');
+    background-size: cover;
+    background-color: rgb(0, 0, 0); /* Fallback para depuração */
+    border-radius: 50%;
+    z-index: 5;
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.7);
+}
+        
+        .boss {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-image: url(halteres.png);
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 0 0 15px rgba(156, 39, 176, 0.7);
+            animation: bossGlow 2s infinite alternate;
+        }
+        
+        @keyframes bossGlow {
+            from { box-shadow: 0 0 15px rgba(156, 39, 176, 0.7); }
+            to { box-shadow: 0 0 25px rgba(156, 39, 176, 0.9), 0 0 35px rgba(156, 39, 176, 0.5); }
+        }
+        
+        .upgrade-point {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background-color: gold;
+            border-radius: 50%;
+            z-index: 8;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+        
+        /* UI Aprimorada */
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 15px;
+            z-index: 20;
+            border: 1px solid #444;
+            min-width: 220px;
+        }
+        
+        #player-name {
+            color: #ffaa00;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+        
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .stat-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+            width: 25px;
+            text-align: center;
+        }
+        
+        .progress-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        .health {
+            background: linear-gradient(to right, #ff3333, #ff6b6b);
+            box-shadow: 0 0 5px #ff3333;
+        }
+        
+        .xp {
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            box-shadow: 0 0 5px #4CAF50;
+        }
+        
+        #player-health-display, #xp-display {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: white;
+            text-shadow: 1px 1px 1px black;
+        }
+        
+        #money-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: gold;
+            padding: 10px 15px;
+            border-radius: 20px;
+            z-index: 20;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            left: auto;
+            right: 20px;
+        }
+        
+        .coin-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+        
+        #round-info {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            z-index: 20;
+            text-align: center;
+            border: 1px solid #444;
+        }
+        
+        #round-info h3 {
+            margin: 0 0 5px 0;
+            color: #ffaa00;
+        }
+        
+        #timer-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            z-index: 20;
+            font-family: 'Arial', sans-serif;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            min-width: 120px;
+            border: 1px solid #444;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        #timer-display.warning {
+            color: #ffcc00;
+            animation: pulse 0.5s infinite alternate;
+        }
+        
+        #timer-display.danger {
+            color: #ff3333;
+            animation: pulse 0.3s infinite alternate;
+        }
+        
+        /* Combate UI */
+        #combat-log {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            width: 350px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            overflow-y: auto;
+            border-radius: 10px;
+            z-index: 20;
+            border: 1px solid #444;
+        }
+        
+        #combat-log p {
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+        
+        #combat-log p:last-child {
+            margin-bottom: 0;
+            font-weight: bold;
+            color: #ffaa00;
+        }
+        
+        .health-bar {
+            position: absolute;
+            top: -10px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+        }
+        
+        .enemy-health .health-fill {
+            background-color: #f44336;
+        }
+        
+        /* Telas de Status */
+        #victory-screen, #round-transition, #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            animation: fadeIn 0.5s forwards;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        #victory-screen {
+            background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,100,0,0.6) 100%);
+        }
+        
+        #victory-screen h2 {
+            color: #ffcc00;
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px gold, 0 0 20px gold;
+            animation: glow 2s infinite alternate;
+        }
+        
+        #game-over {
+            background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(100,0,0,0.6) 100%);
+        }
+        
+        #game-over h2 {
+            color: #f44336;
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #f44336;
+        }
+        
+        #round-transition h2 {
+            color: #ffaa00;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ffaa00;
+        }
+        
+        #restart-btn, #game-over-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: linear-gradient(to right, #ff8a00, #ffaa00);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #222;
+        }
+        
+        #restart-btn:hover, #game-over-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.7);
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px gold, 0 0 20px gold; }
+            to { text-shadow: 0 0 15px gold, 0 0 30px gold, 0 0 40px orange; }
+        }
+        
+        /* Menu de Upgrade Aprimorado */
+        #upgrade-menu {
+            z-index: 1001;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+            padding: 0;
+            border-radius: 15px;
+            z-index: 1000;
+            display: none;
+            color: white;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            border: 2px solid #ffaa00;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .upgrade-header {
+            background: rgba(255, 170, 0, 0.2);
+            padding: 20px;
+            border-bottom: 1px solid #ffaa00;
+        }
+        
+        .upgrade-header h3 {
+            margin: 0;
+            font-size: 1.8em;
+            color: #ffaa00;
+        }
+        
+        .money-display {
+            font-size: 1.3em;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .upgrade-options {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .upgrade-card {
+            display: flex;
+            background: rgba(50, 50, 50, 0.7);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            align-items: center;
+            text-align: left;
+        }
+        
+        .upgrade-card:hover {
+            background: rgba(255, 170, 0, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .upgrade-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: rgba(50, 50, 50, 0.3);
+        }
+        
+        .upgrade-card.disabled:hover {
+            transform: none;
+            background: rgba(50, 50, 50, 0.3);
+        }
+        
+        .upgrade-icon {
+            font-size: 2em;
+            margin-right: 15px;
+            width: 50px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .upgrade-info {
+            flex-grow: 1;
+        }
+        
+        .upgrade-info h4 {
+            margin: 0 0 5px 0;
+            color: #ffaa00;
+        }
+        
+        .upgrade-info p {
+            margin: 0 0 5px 0;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        
+        .upgrade-cost {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            color: gold;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+        
+        #close-upgrade {
+            margin: 15px auto;
+            padding: 12px 30px;
+            background: linear-gradient(to right, #ff8a00, #ffaa00);
+            border: none;
+            color: #222;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+        }
+        
+        #close-upgrade:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 170, 0, 0.4);
+        }
+        
+        /* Efeitos Visuais */
+        .attack-effect {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,200,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: attackPulse 0.5s forwards;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+        }
+        
+        @keyframes attackPulse {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .enemy[class*="boss"] {
+    background-size: cover;
+    background-position: center;
+}
+        .damage-effect {
+            position: absolute;
+            color: red;
+            font-weight: bold;
+            font-size: 1.5em;
+            animation: floatUp 1s forwards;
+            pointer-events: none;
+            z-index: 25;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        .critical-effect {
+            color: #ffcc00;
+            font-size: 2em;
+            text-shadow: 0 0 5px red;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        .upgrade-message {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            white-space: nowrap;
+            z-index: 30;
+            pointer-events: none;
+            transform: translateY(-30px);
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-align: center;
+            min-width: 200px;
+            border: 1px solid #ffaa00;
+        }
+        
+        .upgrade-message.show {
+            opacity: 1;
+        }
+        
+        .upgrade-message::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent;
+        }
+        
+        /* Estilos para projéteis */
+        .projectile {
+            /* Mantenha estas propriedades */
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 15;
+            pointer-events: none;
+            }
+            .boss-theme-1 { background-image: url('cariani.jpeg'); }
+            .boss-theme-2 { background-image: url('imagens/Julhao.png'); }
+            .boss-theme-3 { background-image: url('imagens/toguro.png'); }
+            .boss-theme-4 { background-image: url('imagens/Jorlan.png'); }
+            .boss-theme-5 { background-image: url('imagens/IgorFina.png'); }
+            .boss-theme-5-2 { background-image: url('cariani.jpeg'); }
+            .boss-theme-5-3 { background-image: url('imagens/toguro.png'); }
+            .boss-theme-5-4 { background-image: url('imagens/Julhao.png'); }
+            
+            .enemy.boss1-minion {
+                 background-image: url('cariani.jpeg');
+            }
+
+            .enemy.boss2-minion {
+                background-image: url('imagens/Julhaoenemy.png');
+            }
+
+            .enemy.boss3-minion {
+                background-image: url('imagens/toguroMulher.png');
+            }
+
+            .enemy.boss4-minion {
+                background-image: url('imagens/Jorlan.png');
+            }
+
+            .enemy.boss5-minion {
+                background-image: url('imagens/IgorFina.png');
+            }
+            .boss-phase-change {
+            animation: boss-theme-change 1s infinite;
+            }
+            @keyframes boss-theme-change {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+            }
+
+            .boss-phase-change {
+            animation: boss-theme-change 1s infinite;
+            }
+                        .boss-theme-6 { background-image: url('ceu.jpg'); }
+                
+                        .boss {
+                        animation: boss-pulse 2s infinite;
+                        background-size: cover;
+                        }
+
+            @keyframes boss-pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
+
+.boss-theme-1 { box-shadow: 0 0 20px #8B4513; }
+.boss-theme-2 { box-shadow: 0 0 20px #B22222; }
+.boss-theme-3 { box-shadow: 0 0 20px #228B22; }
+.boss-theme-4 { box-shadow: 0 0 20px #4B0082; }
+.boss-theme-5 { box-shadow: 0 0 20px #4682B4; }
+.boss-theme-6 { box-shadow: 0 0 20px #FFD700; }
+  
+/* Adicione no final da seção de estilo */
+.enemy.boss-theme-1 {
+    background-image: url('cariani-bg.jpg');
+    background-size: cover;
+}
+
+.enemy.boss-theme-2 {
+    background-image: url('julio-bg.jpg');
+    background-size: cover;
+}
+
+#syringe {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background-image: url('imagens/seringa.png');
+    background-size: cover;
+    z-index: 25;
+    display: none;
+    animation: pulse 1.5s infinite;
+}
+
+.syringe-alert {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: red;
+    font-size: 1.5em;
+    text-shadow: 0 0 10px black;
+    display: none;
+}
+
+.syringe-alert {
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(255,0,0,0.7);
+    transition: all 0.3s;
+}
+
+.syringe-count-effect {
+    position: absolute;
+    color: red;
+    font-size: 1.8em;
+    animation: floatUp 0.5s forwards;
+    pointer-events: none;
+    z-index: 100;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-50px); opacity: 0; }
+}
+
+.upgrade-cost span {
+    color: gold;
+    font-size: 1.1em;
+}
+.upgrade-card.disabled .upgrade-cost {
+    background: rgba(255, 0, 0, 0.3) !important;
+}
+
+.upgrade-card.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: 0 0 5px rgba(255,0,0,0.5);
+}
+
+#syringe {
+    border: 2px solid red;
+    border-radius: 50%;
+    animation: syringe-pulse 1.5s infinite;
+}
+
+@keyframes syringe-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.upgrade-feedback {
+    color: #4CAF50;
+    font-weight: bold;
+    animation: floatUp 0.5s ease-out;
+    position: absolute;
+    pointer-events: none;
+}
+#boss-intro {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 999;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  animation: bossIntro 3s forwards;
+}
+
+@keyframes bossIntro {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#boss-intro-content {
+  text-align: center;
+  transform: scale(0.5);
+  animation: contentIntro 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes contentIntro {
+  0% { transform: scale(0.5); }
+  30% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+  70% { transform: scale(1); }
+  100% { transform: scale(0); }
+}
+
+#boss-intro-image {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  border: 5px solid #ffaa00;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+#boss-intro-name {
+  color: #ffaa00;
+  font-size: 2.5em;
+  text-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+  margin: 0;
+}
+.boss-phase-change {
+    animation: boss-theme-change 1s infinite;
+    background-size: cover;
+}
+
+@keyframes boss-theme-change {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+@keyframes boss-theme-change {
+    0% { 
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.2) rotate(180deg);
+        opacity: 0.5;
+    }
+    100% { 
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+.boss-phase-change {
+    animation: boss-theme-change 1s ease-out;
+}
+.enemy.cariani-minion {
+    background-image: url('cariani-minion.png');
+    box-shadow: 0 0 10px #8B4513;
+}
+
+.enemy.balestrin-minion {
+    background-image: url('balestrin-minion.png');
+    box-shadow: 0 0 10px #B22222;
+}
+
+.enemy.toguro-minion {
+    background-image: url('toguro-minion.png');
+    animation: toxic-pulse 1s infinite;
+}
+@keyframes minion-theme-change {
+    0% { 
+        transform: scale(1) rotate(0deg);
+        filter: hue-rotate(0deg);
+    }
+    50% { 
+        transform: scale(1.1) rotate(180deg);
+        filter: hue-rotate(180deg);
+    }
+    100% { 
+        transform: scale(1) rotate(360deg);
+        filter: hue-rotate(360deg);
+    }
+}
+#victory-screen {
+    display: none;
+    background: radial-gradient(circle, rgba(0,100,0,0.95) 0%, rgba(0,50,0,0.9) 100%);
+    animation: victory-glow 2s infinite;
+}
+
+#victory-screen h2 {
+    font-size: 5em;
+    color: gold;
+    text-shadow: 0 0 20px #ffd700;
+    animation: text-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes victory-glow {
+    0% { box-shadow: 0 0 50px rgba(0,255,0,0.5); }
+    50% { box-shadow: 0 0 100px rgba(0,255,0,0.8); }
+    100% { box-shadow: 0 0 50px rgba(0,255,0,0.5); }
+}
+
+@keyframes text-glow {
+    from { text-shadow: 0 0 10px gold; }
+    to { text-shadow: 0 0 30px gold, 0 0 50px orange; }
+}
+.enemy.boss5-minion {
+    animation: minion-theme-change 1.5s infinite;
+    transition: background-image 0.5s ease-in-out;
+}
+@keyframes toxic-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+/* Responsividade */
+        @media (max-width: 1100px) {
+            #game-container {
+                width: 100%;
+                height: 100vh;
+            }
+            
+            #combat-log {
+                width: 300px;
+                left: 10px;
+            }
+        }
+
+    </style>
+    <audio id="boss-theme"></audio>
+</head>
+<body>
+    <!-- Menu Inicial -->
+    <audio class="audio-theme" id="boss1-theme" src="audios/carianiyep.mp3"></audio>
+    <audio class="audio-theme" id="boss2-theme" src="audios/vocenaovai.mp3"></audio>
+    <audio class="audio-theme" id="boss3-theme" src="audios/NaoEFeliz.mp3"></audio>
+    <audio class="audio-theme" id="boss4-theme" src="audios/Jorlan.mp3"></audio>
+    <div id="main-menu">
+        <h1>RPG da Academia</h1>
+        <div class="class-selection">
+            <div class="class-card" data-class="bodybuilder">
+                <h3>Bodybuilder</h3>
+                <div class="stats">
+                    <span>💪 ATQ: 50000</span>
+                    <span>🛡️ DEF: 8</span>
+                    <span>❤️ HP: 130</span>
+                    <span>🏃 VEL: 3</span>
+                </div>
+                <div class="special">
+                    <h4>Super Pump</h4>
+                    <p>+50% ataque por 3 turnos (Recarga: 4 turnos)</p>
+                </div>
+            </div>
+            <div class="class-card" data-class="mensphysique">
+                <h3>Men's Physique</h3>
+                <div class="stats">
+                    <span>💪 ATQ: 8</span>
+                    <span>🛡️ DEF: 10</span>
+                    <span>❤️ HP: 160</span>
+                    <span>🏃 VEL: 5</span>
+                </div>
+                <div class="special">
+                    <h4>Resistência de Campeão</h4>
+                    <p>Cura 30% da vida máxima (Recarga: 5 turnos)</p>
+                </div>
+            </div>
+            <div class="class-card" data-class="classic">
+                <h3>Classic Physique</h3>
+                <div class="stats">
+                    <span>💪 ATQ: 12</span>
+                    <span>🛡️ DEF: 6</span>
+                    <span>❤️ HP: 110</span>
+                    <span>🏃 VEL: 8</span>
+                </div>
+                <div class="special">
+                    <h4>Velocidade Clássica</h4>
+                    <p>+40% velocidade por 3 turnos (Recarga: 3 turnos)</p>
+                </div>
+            </div>
+            <div class="class-card" data-class="open">
+                <h3>Open Category</h3>
+                <div class="stats">
+                    <span>💪 ATQ: 18</span>
+                    <span>🛡️ DEF: 4</span>
+                    <span>❤️ HP: 80</span>
+                    <span>🏃 VEL: 4</span>
+                </div>
+                <div class="special">
+                    <h4>Fúria Aberta</h4>
+                    <p>+75% ataque, -20% vida por 3 turnos (Recarga: 4 turnos)</p>
+                </div>
+            </div>
+            <div class="class-card" data-class="frango">
+                <h3>Frango</h3>
+                <div class="stats">
+                    <span>💪 ATQ: 6</span>
+                    <span>🛡️ DEF: 2</span>
+                    <span>❤️ HP: 70</span>
+                    <span>🏃 VEL: 10</span>
+                </div>
+                <div class="special">
+                    <h4>Sobrevivência do Mais Fraco</h4>
+                    <p>Fica invulnerável por 5s quando vida <15% (1 uso por combate)</p>
+                </div>
+            </div>
+        </div>
+        <button id="start-button">Começar Jogo</button>
+    </div>
+    <div id="victory-screen">
+        <h2>Vitória!</h2>
+        <p>Você derrotou o Chefão Final!</p>
+        <p>Dinheiro total: $<span id="final-money">0</span></p>
+        <button id="restart-btn">Jogar Novamente</button>
+    </div>
+    <!-- Jogo Principal -->
+    <div id="game-container">
+        <div id="syringe"></div>
+        <div class="syringe-alert" style="font-size: 1.8em; bottom: 50px;">
+            <span style="color: #ff4444;">⚠️</span> Inimigos na seringa: 
+            <span id="syringe-count" style="color: white; transition: all 0.3s;">0</span>/12
+        </div>
+        <div id="player">
+            <div class="health-bar">
+                <div class="health-fill" id="player-health-bar"></div>
+            </div>
+        </div>
+        
+        <div id="ui">
+            <h3 id="player-name">Player</h3>
+            <div class="stat-bar">
+                <div class="stat-icon">❤️</div>
+                <div class="progress-container">
+                    <div class="progress-bar health" id="player-health-bar"></div>
+                    <span id="player-health-display">100/100</span>
+                </div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-icon">⚡</div>
+                <div class="progress-container">
+                    <div class="progress-bar xp" id="xp-bar"></div>
+                    <span id="xp-display">Level 1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="money-display">
+            <span class="coin-icon">💰</span> <span id="money-amount">0</span>
+        </div>
+        
+        <div id="round-info">
+            <h3>Round: <span id="current-round">1</span>/5</h3>
+            <p>Minions: <span id="minions-left">0</span>/10</p>
+        </div>
+        
+        <div id="timer-display">02:00</div>
+            
+        <div id="combat-log"></div>
+            
+        <!-- Tela de Vitória -->
+        <div id="victory-screen">
+            <h2>Vitória!</h2>
+            <p>Você completou todos os rounds e derrotou todos os chefões!</p>
+            <p>Dinheiro total: $<span id="final-money">0</span></p>
+            <button id="restart-btn">Jogar Novamente</button>
+        </div>
+            
+        <!-- Tela de Transição de Round -->
+        <div id="round-transition">
+            <h2 id="round-transition-text">Round 1 Completo!</h2>
+        </div>
+            
+        <!-- Tela de Game Over -->
+        <div id="game-over">
+            <h2>Game Over</h2>
+            <p>Você foi derrotado!</p>
+            <p>Round alcançado: <span id="final-round">1</span></p>
+            <button id="game-over-btn">Voltar ao Menu</button>
+        </div>
+            
+        <!-- Menu de Upgrade -->
+        <div id="upgrade-menu">
+            <div class="upgrade-header">
+                <h3>🏋️‍♂️ Academia de Melhorias</h3>
+                <p class="money-display">💰 <span id="upgrade-money">0</span></p>
+            </div>
+            
+            <div class="upgrade-options">
+                <div class="upgrade-card" id="upgrade-attack">
+                    <div class="upgrade-icon">💪</div>
+                    <div class="upgrade-info">
+                        <h4>Aumentar Ataque</h4>
+                        <p>+2 de força</p>
+                        <div class="upgrade-cost">$<span>50</span></div>
+                    </div>
+                </div>
+                
+                <div class="upgrade-card" id="upgrade-defense">
+                    <div class="upgrade-icon">🛡️</div>
+                    <div class="upgrade-info">
+                        <h4>Aumentar Defesa</h4>
+                        <p>+1 de defesa</p>
+                        <div class="upgrade-cost">$<span>50</span></div>
+                    </div>
+                </div>
+                
+                <div class="upgrade-card" id="upgrade-health">
+                    <div class="upgrade-icon">❤️</div>
+                    <div class="upgrade-info">
+                        <h4>Aumentar Vida</h4>
+                        <p>+20 de vida máxima</p>
+                        <div class="upgrade-cost">$<span>50</span></div>
+                    </div>
+                </div>
+                
+                <div class="upgrade-card" id="upgrade-speed">
+                    <div class="upgrade-icon">🏃</div>
+                    <div class="upgrade-info">
+                        <h4>Aumentar Velocidade</h4>
+                        <p>+1 de velocidade</p>
+                        <div class="upgrade-cost">$<span>50</span></div>
+                    </div>
+                </div>
+                
+                <div class="upgrade-card" id="upgrade-special">
+                    <div class="upgrade-icon">✨</div>
+                    <div class="upgrade-info">
+                        <h4>Melhorar Habilidade</h4>
+                        <p>Aprimora sua habilidade especial</p>
+                        <div class="upgrade-cost">$<span>100</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="close-upgrade">Voltar ao Treino</button>
+        </div>
+    </div>
+    <div id="boss-intro">
+        <div id="boss-intro-content">
+          <img id="boss-intro-image" src="">
+          <h2 id="boss-intro-name"></h2>
+        </div>
+      </div>
+    <script>
+  let isMuted = false;
+  function toggleMute(mute) {
+    isMuted = mute;
+    document.querySelectorAll('audio').forEach(audio => {
+        audio.muted = mute;
+    });
+}
+function resetGameState(selectedClass) {
+    // Resetar estado do jogo
+    if (!gameState.selectedClass) {
+        console.error("Classe selecionada não encontrada! Usando padrão...");
+        gameState.selectedClass = 'bodybuilder';
+    }
+
+    // Manter referência vitalícia do jogador
+    if (gameState.player) {
+        gameState.player.stats = {...CLASSES[gameState.selectedClass].stats};
+        gameState.player.health = CLASSES[gameState.selectedClass].stats.hp;
+    } else {
+        gameState.player = {
+            stats: {...CLASSES[gameState.selectedClass].stats},
+            health: CLASSES[gameState.selectedClass].stats.hp,
+            x: config.mapWidth/2,
+            y: config.mapHeight/2
+        };
+    }
+    gameState.player = null;
+    gameState.bossSpawned = false;
+    gameState.player = null;
+    gameState.enemies = [];
+    gameState.keys = {};
+    gameState.combatLog = [];
+    gameState.currentRound = 1;
+    gameState.minionsDefeated = 0;
+    gameState.bossDefeated = false;
+    gameState.gameActive = false;
+    gameState.gamePaused = false;
+    gameState.specialActive = false;
+    gameState.specialTurnsLeft = 0;
+    gameState.specialCooldown = 0;
+    gameState.money = 0;
+    gameState.xp = 0;
+    gameState.level = 1;
+    gameState.upgradePoints = [];
+    gameState.lastDamageTime = 0;
+    gameState.enemyDamageTimers = {};
+    gameState.timer = config.roundTime;
+    gameState.lastPlayerAttackTime = 0;
+    gameState.projectiles = [];
+    gameState.enemyRangedAttackTimers = {};
+    gameState.totalEnemiesInRound = 0;
+    gameState.syringeActive = false;
+    gameState.enemiesInSyringe = 0;
+    gameState.currentBossTheme = '';
+
+    // Parar todos os intervalos
+    clearInterval(gameState.timerInterval);
+    Object.values(gameState.enemyDamageTimers).forEach(clearInterval);
+    Object.values(gameState.enemyRangedAttackTimers).forEach(clearInterval);
+
+    // Parar e resetar áudios
+    document.querySelectorAll('.audio-theme').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+
+    // Remover elementos dinâmicos
+    const elementsToRemove = [
+        '.enemy', '.boss', '.projectile', 
+        '.upgrade-point', '.upgrade-message',
+        '.damage-effect', '.attack-effect'
+    ];
+    elementsToRemove.forEach(selector => {
+        document.querySelectorAll(selector).forEach(e => e.remove());
+    });
+
+    // Resetar UI
+    combatLogElement.innerHTML = '';
+    document.getElementById('syringe-count').textContent = '0';
+    document.getElementById('player-health-display').textContent = '100/100';
+    document.getElementById('player-health-bar').style.width = '100%';
+    document.getElementById('xp-display').textContent = 'Level 1';
+    document.getElementById('xp-bar').style.width = '0%';
+    document.getElementById('money-amount').textContent = '0';
+    document.getElementById('current-round').textContent = '1';
+    document.getElementById('minions-left').textContent = '0/10';
+    document.getElementById('timer-display').textContent = '02:00';
+    document.getElementById('timer-display').className = '';
+
+    // Resetar atributos do jogador
+    if (gameState.player) {
+        // Resetar completamente a velocidade (Adicione estas 3 linhas)
+        gameState.player.originalStats.spd = CLASSES[selectedClass].stats.spd; // <-- Reset base
+        gameState.player.stats.spd = CLASSES[selectedClass].stats.spd;         // <-- Reset atual
+        gameState.player.tempSpdBonus = 0;                                     // <-- Reset temporário
+    }
+}
+
+function cycleMinionImages(minionElement, bossConfig) {
+    let currentPhase = 0;
+    const totalPhases = bossConfig.minionImages.length;
+    let currentAudio = null;
+    let bossPhaseInterval;
+
+    // Encontrar referência do boss principal
+    const boss = gameState.enemies.find(e => e.isBoss && e.theme === 'boss-theme-5');
+
+    const changePhase = () => {
+        if (!boss || !bossConfig.phaseImages) return;
+
+        // Sincronizar com a fase atual do boss
+        const newPhase = boss.currentPhase % totalPhases;
+        
+        // Só atualizar se houver mudança de fase
+        if (newPhase !== currentPhase) {
+            currentPhase = newPhase;
+
+            // Parar áudio anterior
+            if(currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            // Atualizar imagem do minion
+            minionElement.style.backgroundImage = `url('${bossConfig.minionImages[currentPhase]}')`;
+            minionElement.style.animation = 'minion-theme-change 0.5s';
+
+            // Atualizar áudio sincronizado
+            currentAudio = new Audio(bossConfig.minionAudios[currentPhase]);
+            currentAudio.volume = 0.3;
+            currentAudio.loop = true; // Áudio em loop até próxima fase
+            
+            // Gerenciar reprodução
+            const playPromise = currentAudio.play().catch(error => {
+                console.log('Audio autoplay blocked:', error);
+                showAudioUnlockButton(currentAudio);
+            });
+
+            // Resetar animação após 500ms
+            setTimeout(() => {
+                minionElement.style.animation = '';
+            }, 500);
+        }
+    };
+
+    // Sincronizar com o intervalo do boss
+    const syncWithBoss = () => {
+        if(boss && boss.phaseInterval) {
+            clearInterval(bossPhaseInterval);
+            bossPhaseInterval = boss.phaseInterval;
+        }
+    };
+
+    // Verificar sincronização a cada segundo
+    const syncInterval = setInterval(syncWithBoss, 1000);
+    
+    // Iniciar ciclo
+    changePhase();
+    const phaseInterval = setInterval(changePhase, 1000);
+
+    // Função de limpeza
+    return () => {
+        clearInterval(phaseInterval);
+        clearInterval(syncInterval);
+        if(currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        minionElement.style.animation = '';
+    };
+}
+        const BOSSES = [
+    {
+        name: "Cariani da Dungeon",
+        minionType: "boss1-minion",
+        introImage: "cariani.jpeg",
+        audio: "boss1-theme",
+        stats: { atk: 35, def: 15, hp: 1500, spd: 3 },
+        theme: "boss-theme-1",
+        minionStats: { 
+        atkMultiplier: 0.3,
+        defMultiplier: 0.5,
+        hpMultiplier: 0.2,
+        spdMultiplier: 1.2
+    },
+        ability: function() {
+            for(let i = 0; i < 3; i++) spawnEnemy();
+            addToCombatLog("Cariani invocou reforços!");
+        },
+        flavorText: "O Mestre das Flexões Caóticas!",
+        effectColor: "#8B4513"
+    },
+    {
+        name: "Balestrin",
+        minionType: "boss2-minion",
+        introImage: "imagens/Julhao.png",
+        audio: "boss2-theme",
+        minionStats: { 
+        atkMultiplier: 0.3,
+        defMultiplier: 0.5,
+        hpMultiplier: 0.2,
+        spdMultiplier: 1.2
+    }   ,
+        stats: { atk: 50, def: 20, hp: 2000, spd: 4 },
+        theme: "boss-theme-2",
+        ability: function() {
+            gameState.enemies.forEach(enemy => {
+                enemy.stats.atk += 5;
+                enemy.stats.spd += 1;
+            });
+            addToCombatLog("Boss da Arena energizou os inimigos!");
+        },
+        flavorText: "O Senhor da Intensidade!",
+        effectColor: "#B22222"
+    },
+    {
+        name: "Toguro",
+        minionType: "boss3-minion",
+        audio: "boss3-theme",
+        introImage: "imagens/toguro.png",
+        minionType: "boss3-minion",
+        minionStats: { 
+        atkMultiplier: 0.3,
+        defMultiplier: 0.5,
+        hpMultiplier: 0.2,
+        spdMultiplier: 1.2
+    },
+        stats: { atk: 50, def: 20, hp: 2000, spd: 4 },
+        theme: "boss-theme-3",
+        ability: function() {
+            gameState.enemies.forEach(enemy => {
+                enemy.stats.atk += 5;
+                enemy.stats.spd += 1;
+            });
+            addToCombatLog("Boss da Arena energizou os inimigos!");
+        },
+        flavorText: "O Senhor da Intensidade!",
+        effectColor: "#B22222"
+    },
+    {
+        name: "Jorlan",
+        audio: "boss4-theme",
+        introImage: "imgs/Jorlan-intro.jpg",
+
+        minionType: "boss4-minion",
+
+        stats: { atk: 50, def: 20, hp: 2000, spd: 4 },
+        theme: "boss-theme-4",
+        minionStats: { 
+        atkMultiplier: 0.3,
+        defMultiplier: 0.5,
+        hpMultiplier: 0.2,
+        spdMultiplier: 1.2
+    },
+        ability: function() {
+            gameState.enemies.forEach(enemy => {
+                enemy.stats.atk += 5;
+                enemy.stats.spd += 1;
+            });
+            addToCombatLog("Boss da Arena energizou os inimigos!");
+        },
+        flavorText: "O Senhor da Intensidade!",
+        effectColor: "#B22222"
+    },
+    {
+    name: "IgorFormador",
+    audio: "boss5-theme",
+    isFinalBoss: true,
+    introImage: "imagens/IgorFina.png",
+    minionType: "boss5-minion",
+    minionStats: { 
+        atkMultiplier: 0.3,
+        defMultiplier: 0.5,
+        hpMultiplier: 0.2,
+        spdMultiplier: 1.2
+    },
+    stats: { atk: 50, def: 20, hp: 2000, spd: 4 },
+    theme: "boss-theme-5",
+    ability: function() {
+        gameState.enemies.forEach(enemy => {
+            enemy.stats.atk += 5;
+            enemy.stats.spd += 1;
+        });
+        addToCombatLog("Boss da Arena energizou os inimigos!");
+    },
+    flavorText: "O Senhor da Intensidade!",
+    effectColor: "#B22222",
+    // Adicione estas propriedades
+    phaseImages: [
+        "cariani.jpeg",
+        "imagens/Julhao.png",
+        "imagens/toguro.png",
+        "imagens/Jorlan.png",
+        "imagens/IgorFina.jpg"
+    ],
+    phaseAudios: [
+        "audios/carianiyep.mp3",
+        "audios/vocenaovai.mp3",
+        "audios/NaoEFeliz.mp3",
+        "audios/Jorlan.mp3",
+        "audios/Jorlan.mp3"
+    ],
+    // Configurações dos minions
+    minionImages: [
+        "cariani.jpeg",
+        "imagens/Julhaoenemy.png",
+        "imagens/toguroMulher.png",
+        "imagens/Jorlan.png",
+        "imagens/IgorFina.png"
+    ],
+    minionAudios: [
+        "audios/minion1-theme.mp3",
+        "audios/minion2-theme.mp3",
+        "audios/minion3-theme.mp3",
+        "audios/minion4-theme.mp3",
+        "audios/minion5-theme.mp3"
+    ]
+}
+    
+];
+
+function cycleBoss5Images(bossElement, bossConfig) {
+    let currentPhase = 0;
+    const totalPhases = bossConfig.phaseImages.length;
+    let currentAudio = null;
+
+    const changePhase = () => {
+        if(currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+
+        // Atualizar boss
+        bossElement.style.backgroundImage = `url('${bossConfig.phaseImages[currentPhase]}')`;
+        
+        // Atualizar minions
+        gameState.enemies.filter(e => e.isBossMinion).forEach(minion => {
+            const minionElement = document.getElementById(`enemy-${minion.id}`);
+            if(minionElement) {
+                minionElement.style.backgroundImage = `url('${bossConfig.minionImages[currentPhase]}')`;
+            }
+        });
+
+        // Áudio em loop
+        currentAudio = new Audio(bossConfig.phaseAudios[currentPhase]);
+        currentAudio.volume = 0.4;
+        currentAudio.loop = true; // Adicionar loop
+        currentAudio.play().catch(error => console.log('Audio error:', error));
+
+
+        // Efeito visual
+        bossElement.style.animation = 'boss-theme-change 0.5s';
+        setTimeout(() => {
+            bossElement.style.animation = '';
+        }, 500);
+
+        // Avançar fase
+        currentPhase = (currentPhase + 1) % totalPhases;
+    };
+
+    // Iniciar ciclo
+    const phaseInterval = setInterval(changePhase, 5000);
+    
+    // Primeira mudança imediata
+    changePhase();
+
+    // Parar ciclo quando o boss morrer
+    return () => {
+        clearInterval(phaseInterval);
+        if(currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+    };
+}
+        function getSpawnPosition(index, total) {
+            const angle = (Math.PI * 2 * index) / total;
+            const radius = 250;
+            return {
+                x: gameState.player.x + radius * Math.cos(angle),
+                y: gameState.player.y + radius * Math.sin(angle)
+            };
+        }
+    
+        const ENEMY_SPACING = {
+        MIN_DISTANCE: 40, // Reduzido de 55
+        REPEL_FORCE: 0.4  // Reduzido de 0.8
+        };
+    
+        let isOnUpgradePoint = false;
+    
+        const config = {
+            syringeRadius: 35,
+            playerSpeed: 5,
+            enemySpeed: 2.5,
+            mapWidth: 1024,
+            mapHeight: 920,
+            minionsPerRound: 10,
+            totalRounds: 50,
+            bossSpawnInterval: 5,
+            bossHealthMultiplier: 50,
+            bossAttackMultiplier: 3,
+            enemyDamageInterval: 1000,
+            enemyDamage: 5,
+            moneyDrop: {
+                minion: 20,
+                boss: 200
+            },
+            upgradeCosts: {
+                attack: 50,
+                defense: 50,
+                health: 50,
+                speed: 50,
+                special: 100
+            },
+            upgradeAmounts: {
+                attack: 2,
+                defense: 1,
+                health: 20,
+                speed: 1
+            },
+            roundTime: 120,
+            xpPerLevel: 100,
+            criticalChance: 0.1,
+            criticalMultiplier: 1.5,
+            playerAttackInterval: 300,
+            enemyProjectileSpeed: 8,
+            enemyRangedAttackInterval: 2000,
+            syringeActive: false,
+            enemiesInSyringe: 0,
+            syringeRadius: 35,
+            syringeLimit: 52,
+            currentBossTheme: ''
+            
+        };
+    
+        const CLASSES = {
+            bodybuilder: {
+                name: "Bodybuilder",
+                stats: { atk: 50000, def: 8, hp: 100000, spd: 5 },
+                special: {
+                    name: "Super Pump",
+                    desc: "+50% ataque por 3 turnos",
+                    cooldown: 4,
+                    duration: 3,
+                    effect: function(player, enemy) {
+                        player.tempAtkBoost = player.stats.atk * 0.5;
+                        player.stats.atk += player.tempAtkBoost;
+                        return `${player.name} usou ${this.name}! Ataque aumentado!`;
+                    },
+                    revert: function(player) {
+                        player.stats.atk -= player.tempAtkBoost;
+                        player.tempAtkBoost = 0;
+                    }
+                }
+            },
+            mensphysique: {
+                name: "Men's Physique",
+                stats: { atk: 8, def: 10, hp: 160, spd: 5 },
+                special: {
+                    name: "Resistência de Campeão",
+                    desc: "Cura 30% da vida máxima",
+                    cooldown: 5,
+                    effect: function(player, enemy) {
+                        const healAmount = Math.floor(player.maxHealth * 0.3);
+                        player.health = Math.min(player.maxHealth, player.health + healAmount);
+                        showDamage(`+${healAmount}`, player.x, player.y, false, true);
+                        return `${player.name} usou ${this.name} e recuperou ${healAmount} de vida!`;
+                    }
+                }
+            },
+            classic: {
+                name: "Classic Physique",
+                stats: { atk: 12, def: 6, hp: 110, spd: 8 },
+                special: {
+                    name: "Velocidade Clássica",
+                    desc: "+40% velocidade por 3 turnos",
+                    cooldown: 3,
+                    duration: 3,
+                    effect: function(player, enemy) {
+                        player.tempSpdBonus = player.stats.spd * 0.4;
+                        player.stats.spd += player.tempSpdBonus;
+                        return `${player.name} usou ${this.name}! Velocidade aumentada!`;
+                    },
+                    revert: function(player) {
+                        player.stats.spd -= player.tempSpdBonus;
+                        player.tempSpdBonus = 0;
+                    }
+                }
+            },
+            open: {
+                name: "Open Category",
+                stats: { atk: 18, def: 4, hp: 80, spd: 4 },
+                special: {
+                    name: "Fúria Aberta",
+                    desc: "+75% ataque, -20% vida por 3 turnos",
+                    cooldown: 4,
+                    duration: 3,
+                    effect: function(player, enemy) {
+                        player.tempAtkBoost = player.stats.atk * 0.75;
+                        player.stats.atk += player.tempAtkBoost;
+                        
+                        const healthReduction = Math.floor(player.health * 0.2);
+                        player.health -= healthReduction;
+                        showDamage(`-${healthReduction}`, player.x, player.y, false, false);
+                        
+                        return `${player.name} usou ${this.name}! +75% ataque, mas perdeu ${healthReduction} de vida!`;
+                    },
+                    revert: function(player) {
+                        player.stats.atk -= player.tempAtkBoost;
+                        player.tempAtkBoost = 0;
+                    }
+                }
+            },
+            frango: {
+                name: "Frango",
+                stats: { atk: 6, def: 2, hp: 70, spd: 10 },
+                special: {
+                    name: "Sobrevivência do Mais Fraco",
+                    desc: "Invulnerável por 5s quando vida <15%",
+                    cooldown: 999,
+                    oncePerCombat: true,
+                    effect: function(player, enemy) {
+                        player.invulnerable = true;
+                        setTimeout(() => {
+                            player.invulnerable = false;
+                            addToCombatLog("A invulnerabilidade acabou!");
+                        }, 5000);
+                        return `${player.name} usou ${this.name}! Invulnerável por 5 segundos!`;
+                    }
+                }
+            }
+        };
+    
+        const gameState = {
+            bossSpawned: false,
+            player: null,
+            enemies: [],
+            keys: {},
+            combatLog: [],
+            currentRound: 1,
+            minionsDefeated: 0,
+            bossDefeated: false,
+            gameActive: false,
+            gamePaused: false,
+            specialActive: false,
+            specialTurnsLeft: 0,
+            specialCooldown: 0,
+            money: 0,
+            xp: 0,
+            level: 1,
+            upgradePoints: [],
+            lastDamageTime: 0,
+            enemyDamageTimers: {},
+            timer: config.roundTime,
+            timerInterval: null,
+            lastPlayerAttackTime: 0,
+            playerAttackInterval: config.playerAttackInterval,
+            projectiles: [],
+            enemyRangedAttackTimers: {},
+            totalEnemiesInRound: 0,
+            syringeActive: false,
+            enemiesInSyringe: 0,
+            currentBossTheme: ''
+                };
+    
+        const gameContainer = document.getElementById('game-container');
+        const playerElement = document.getElementById('player');
+        const combatLogElement = document.getElementById('combat-log');
+        const roundInfoElement = document.getElementById('round-info');
+        const minionsLeftElement = document.getElementById('minions-left');
+        const currentRoundElement = document.getElementById('current-round');
+        const timerDisplay = document.getElementById('timer-display');
+        const victoryScreen = document.getElementById('victory-screen');
+        const restartBtn = document.getElementById('restart-btn');
+        const roundTransition = document.getElementById('round-transition');
+        const roundTransitionText = document.getElementById('round-transition-text');
+        const gameOverScreen = document.getElementById('game-over');
+        const gameOverBtn = document.getElementById('game-over-btn');
+        const moneyDisplay = document.getElementById('money-amount');
+        const upgradeMenu = document.getElementById('upgrade-menu');
+        const upgradeMoneyDisplay = document.getElementById('upgrade-money');
+        const closeUpgradeBtn = document.getElementById('close-upgrade');
+        const finalMoneyDisplay = document.getElementById('final-money');
+        const finalRoundDisplay = document.getElementById('final-round');
+        const xpBar = document.getElementById('xp-bar');
+        const xpDisplay = document.getElementById('xp-display');
+        function initMenu() {
+    // Substituir o menu para remover listeners antigos
+    const oldMenu = document.getElementById('main-menu');
+    const newMenu = oldMenu.cloneNode(true);
+    oldMenu.parentNode.replaceChild(newMenu, oldMenu);
+
+    // Configurar seleção de classe
+    let selectedClass = null;
+    const classCards = document.querySelectorAll('.class-card');
+
+    classCards.forEach(card => {
+        card.addEventListener('click', () => {
+            classCards.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedClass = card.dataset.class;
+        });
+    });
+
+    // Configurar botão de início
+    document.getElementById('start-button').addEventListener('click', () => {
+        if (selectedClass) {
+            startGame(selectedClass);
+        } else {
+            alert("Por favor, selecione uma classe para começar!");
+        }
+    });
+}
+    
+        function startGame(selectedClass) {
+            resetGameState(selectedClass);
+            resetGameState();
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            
+            const selectedClassData = JSON.parse(JSON.stringify(CLASSES[selectedClass]));
+            const playerStats = JSON.parse(JSON.stringify(selectedClassData.stats));
+            const playerSpecial = JSON.parse(JSON.stringify(selectedClassData.special));
+            const baseStats = {
+            ...selectedClassData.stats,
+            spd: selectedClassData.stats.spd // Garante a velocidade exata da classe
+        };
+            gameState.player = {
+                x: config.mapWidth / 2,
+                y: config.mapHeight / 2,
+                width: 60,
+                height: 60,
+                stats: { ...CLASSES[selectedClass].stats }, // <-- Pega valores DIRETO da classe
+                originalStats: { ...CLASSES[selectedClass].stats }, // <-- Cópia limpa
+                upgrades: { attack: 0, defense: 0, health: 0, speed: 0, special: 0 },
+                tempSpdBonus: 0,
+            tempSpdBonus: 0,
+            health: CLASSES[selectedClass].stats.hp,
+            maxHealth: CLASSES[selectedClass].stats.hp,
+            baseSpeed: CLASSES[selectedClass].stats.spd,
+
+        };
+            document.getElementById('player-name').textContent = selectedClassData.name;
+            
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            restartBtn.addEventListener('click', restartGame);
+            gameOverBtn.addEventListener('click', returnToMenu);
+            
+            document.getElementById('upgrade-attack')?.addEventListener('click', () => upgradeStat('attack'));
+            document.getElementById('upgrade-defense')?.addEventListener('click', () => upgradeStat('defense'));
+            document.getElementById('upgrade-health')?.addEventListener('click', () => upgradeStat('health'));
+            document.getElementById('upgrade-speed')?.addEventListener('click', () => upgradeStat('speed'));
+            document.getElementById('upgrade-special')?.addEventListener('click', () => upgradeStat('special'));
+            
+            closeUpgradeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeUpgradeMenu();
+                return false;
+            }, false);
+            
+            gameState.gameActive = true;
+            gameState.currentRound = 25;
+            gameState.minionsDefeated = 0;
+            gameState.bossDefeated = false;
+            gameState.enemies = [];
+            gameState.money = 0;
+            gameState.xp = 0;
+            gameState.level = 1;
+            gameState.upgradePoints = [];
+            gameState.timer = config.roundTime;
+            gameState.projectiles = [];
+            gameState.enemiesInSyringe = 0;
+            createUpgradePoints();
+            
+            updatePlayerPosition();
+            updateUI();
+            updateTimerDisplay();
+            
+            startRound();
+            
+            requestAnimationFrame(gameLoop);
+            console.log(`Velocidade inicial do jogador: ${gameState.player.stats.spd}`);
+
+        }
+    
+        function createUpgradePoints() {
+            document.querySelectorAll('.upgrade-point, .upgrade-message').forEach(point => point.remove());
+            gameState.upgradePoints = [];
+            
+            const positions = [
+                { x: 150, y: 150 },
+                { x: config.mapWidth - 150, y: 150 },
+                { x: 150, y: config.mapHeight - 150 },
+                { x: config.mapWidth - 150, y: config.mapHeight - 150 }
+            ];
+            
+            positions.forEach(pos => {
+                const point = {
+                    id: Date.now() + Math.random(),
+                    x: pos.x,
+                    y: pos.y,
+                    width: 35,
+                    height: 35,
+                    messageElement: null
+                };
+                
+                gameState.upgradePoints.push(point);
+                
+                const pointElement = document.createElement('div');
+                pointElement.className = 'upgrade-point';
+                pointElement.id = `upgrade-${point.id}`;
+                pointElement.style.left = `${point.x}px`;
+                pointElement.style.top = `${point.y}px`;
+                
+                gameContainer.appendChild(pointElement);
+            });
+        }
+    
+        function checkUpgradePointCollision() {
+            if (upgradeMenu.style.display === 'block') return;
+            
+            const player = gameState.player;
+            isOnUpgradePoint = false;
+            
+            document.querySelectorAll('.upgrade-message').forEach(msg => msg.remove());
+            
+            for (let i = 0; i < gameState.upgradePoints.length; i++) {
+                const point = gameState.upgradePoints[i];
+                
+                const distance = Math.sqrt(
+                    Math.pow(player.x + player.width/2 - (point.x + point.width/2), 2) +
+                    Math.pow(player.y + player.height/2 - (point.y + point.height/2), 2)
+                );
+                
+                if (distance < 40) {
+                    isOnUpgradePoint = true;
+                    
+                    const message = document.createElement('div');
+                    message.className = 'upgrade-message show';
+                    message.textContent = 'Pressione "H" para melhorias';
+                    message.style.left = `${point.x - 50}px`;
+                    message.style.top = `${point.y - 40}px`;
+                    message.dataset.pointId = point.id;
+                    
+                    gameContainer.appendChild(message);
+                    point.messageElement = message;
+                    
+                    break;
+                }
+            }
+        }
+    
+        function openUpgradeMenu() {
+            if (upgradeMenu.style.display === 'block') return;
+            if (!gameState.gameActive) return;
+            
+            gameState.gamePaused = true;
+            upgradeMoneyDisplay.textContent = gameState.player.money;
+            updateUpgradeOptions();
+            upgradeMenu.style.display = 'block';
+        }
+    
+        function closeUpgradeMenu() {
+            upgradeMenu.style.display = 'none';
+            gameState.gamePaused = false;
+            return false;
+        }
+    
+// Substitua a função updateUpgradeOptions por esta versão corrigida
+function updateUpgradeOptions() {
+    const player = gameState.player;
+
+    document.querySelectorAll('.upgrade-card').forEach(option => {
+        const stat = option.id.split('-')[1]; // Extrai o nome da habilidade (e.g., 'attack', 'defense')
+        const costElement = option.querySelector('.upgrade-cost span');
+        const currentLevel = Number(player.upgrades[stat]) || 0;
+
+        // Cálculo do custo dinâmico
+        const baseCost = config.upgradeCosts[stat] || 50;
+        const cost = baseCost + (currentLevel * 25);
+
+        // Atualiza o valor exibido na UI
+        costElement.textContent = cost;
+
+        const canAfford = player.money >= cost;
+        const maxLevel = stat === 'special' ? 5 : 10;
+
+        // Habilita ou desabilita o botão de upgrade
+        option.classList.toggle('disabled', !canAfford || currentLevel >= maxLevel);
+    });
+}
+    
+// Substituir a função upgradeStat() por esta versão melhorada
+function upgradeStat(stat) {
+    const option = document.getElementById(`upgrade-${stat}`);
+    if (!gameState.player.originalStats) {
+        gameState.player.originalStats = {...CLASSES[selectedClass].stats};
+    }
+    if (!option || option.classList.contains('disabled')) return;
+
+    const player = gameState.player;
+    const currentLevel = Number(player.upgrades[stat]) || 0;
+
+    // Cálculo do custo dinâmico
+    const baseCost = config.upgradeCosts[stat] || 50;
+    const cost = baseCost + (currentLevel * 25);
+
+    if (player.money < cost) {
+        console.log(`Dinheiro insuficiente: ${player.money} < ${cost}`);
+        return;
+    }
+
+    // Deduz o custo e aumenta o nível da habilidade
+    player.money -= cost;
+    player.upgrades[stat] = currentLevel + 1;
+
+    // Atualizações imediatas da UI
+    moneyDisplay.textContent = player.money;
+    updateUpgradeOptions();
+    updateUI();
+
+    // Aplicar efeitos do upgrade
+    switch (stat) {
+        case 'attack':
+            player.stats.atk += config.upgradeAmounts.attack || 2;
+            break;
+        case 'defense':
+            player.stats.def += config.upgradeAmounts.defense || 1;
+            break;
+        case 'health':
+            const healthBoost = config.upgradeAmounts.health || 20;
+            player.maxHealth += healthBoost;
+            player.health = Math.min(player.maxHealth, player.health + healthBoost);
+            break;
+            
+        case 'special':
+            if (player.special.cooldown > 1) {
+                player.special.cooldown--;
+            }
+            break;
+    }
+
+    // Feedback visual
+    const feedback = document.createElement('div');
+    feedback.className = 'upgrade-feedback';
+    feedback.textContent = `+${config.upgradeAmounts[stat]} ${stat.toUpperCase()}`;
+    feedback.style.left = `${player.x}px`;
+    feedback.style.top = `${player.y}px`;
+    gameContainer.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 1000);
+}
+    
+        function startRound() {
+            gameState.minionsDefeated = 0;
+            gameState.totalEnemiesInRound = config.minionsPerRound;
+            updateRoundInfo();
+            startTimer();
+            
+            addToCombatLog(`Round ${gameState.currentRound} começou! Derrote ${config.minionsPerRound} minions em 2 minutos!`);
+            
+            for (let i = 0; i < config.minionsPerRound; i++) {
+                spawnEnemy();
+            }
+            document.getElementById('syringe').style.display = 'block';
+            document.querySelector('.syringe-alert').style.display = 'block';
+            gameState.syringeActive = true;
+        }
+    
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            gameState.timer = config.roundTime;
+            updateTimerDisplay();
+            
+            gameState.timerInterval = setInterval(() => {
+                if (!gameState.gamePaused && gameState.gameActive) {
+                    gameState.timer--;
+                    updateTimerDisplay();
+                    
+                    if (gameState.timer <= 0) {
+                        timeExpired();
+                    }
+                }
+            }, 1000);
+        }
+    
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.timer / 60);
+            const seconds = gameState.timer % 60;
+            
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timerDisplay.textContent = timeString;
+            
+            timerDisplay.classList.remove('warning', 'danger');
+            if (gameState.timer <= 30) {
+                timerDisplay.classList.add('danger');
+            } else if (gameState.timer <= 60) {
+                timerDisplay.classList.add('warning');
+            }
+        }
+    
+        function timeExpired() {
+            clearInterval(gameState.timerInterval);
+            gameState.timerInterval = null;
+            
+            addToCombatLog("Tempo esgotado! Você não eliminou os minions a tempo!");
+            gameOver();
+        }
+    
+    function spawnEnemy() {
+    const roundFactor = Math.pow(1.2, gameState.currentRound - 1);
+    const baseHealth = 50 + gameState.currentRound * 8;
+    const baseAttack = 8 + gameState.currentRound * 1.5;
+    const spawnPosition = {
+        x: Math.random() * (config.mapWidth - 100) + 50,
+        y: Math.random() * (config.mapHeight - 100) + 50
+    };
+    const enemy = {
+        id: Date.now() + Math.random(), // ID único
+        x: spawnPosition.x,
+        y: spawnPosition.y,
+        width: 45,
+        height: 45,
+        stats: {
+            atk: baseAttack * roundFactor,
+            def: 3 + gameState.currentRound * 0.8,
+            hp: baseHealth * roundFactor,
+            spd: config.enemySpeed * (1 + gameState.currentRound * 0.02)
+        },
+        health: baseHealth * roundFactor,
+        maxHealth: baseHealth * roundFactor,
+        name: `Minion R${gameState.currentRound}`,
+        lastRangedAttack: 0,
+        isBoss: false // Adicionar propriedade isBoss
+    };
+    if(gameState.currentBossTheme) {
+        enemyElement.classList.add(gameState.currentBossTheme);
+    }
+    
+    gameState.enemies.push(enemy);
+    console.log(`Inimigo ${enemy.id} criado em x:${enemy.x}, y:${enemy.y}`);
+    updateMinionsCounter();
+    
+    const enemyElement = document.createElement('div');
+    enemyElement.className = 'enemy';
+    if(gameState.currentBossTheme) enemyElement.classList.add(gameState.currentBossTheme);
+    enemyElement.id = `enemy-${enemy.id}`;
+    enemyElement.style.left = `${enemy.x}px`;
+    enemyElement.style.top = `${enemy.y}px`;
+    gameContainer.appendChild(enemyElement);
+    
+    gameContainer.appendChild(enemyElement);
+    
+    const healthBar = document.createElement('div');
+    healthBar.className = 'health-bar enemy-health';
+    healthBar.innerHTML = '<div class="health-fill"></div>';
+    enemyElement.appendChild(healthBar);
+    
+    gameState.enemyDamageTimers[enemy.id] = setInterval(() => {
+        if (gameState.gameActive && !gameState.gamePaused) {
+            const currentEnemy = gameState.enemies.find(e => e.id === enemy.id);
+            if (currentEnemy) {
+                checkEnemyDamage(currentEnemy);
+            } else {
+                clearInterval(gameState.enemyDamageTimers[enemy.id]);
+                delete gameState.enemyDamageTimers[enemy.id];
+            }
+        }
+    }, config.enemyDamageInterval);
+    
+    gameState.enemyRangedAttackTimers[enemy.id] = setInterval(() => {
+        if (gameState.gameActive && !gameState.gamePaused) {
+            const currentEnemy = gameState.enemies.find(e => e.id === enemy.id);
+            if (currentEnemy) {
+                enemyRangedAttack(currentEnemy);
+            } else {
+                clearInterval(gameState.enemyRangedAttackTimers[enemy.id]);
+                delete gameState.enemyRangedAttackTimers[enemy.id];
+            }
+        }
+    }, config.enemyRangedAttackInterval);
+}
+    
+function enemyRangedAttack(enemy) {
+    const now = Date.now();
+    if (now - enemy.lastRangedAttack < config.enemyRangedAttackInterval) return;
+
+    const projectileTypes = ['soda', 'burger'];
+    const type = projectileTypes[Math.floor(Math.random() * projectileTypes.length)];
+    
+    const angle = Math.atan2(
+        gameState.player.y - enemy.y,
+        gameState.player.x - enemy.x
+    );
+    
+    const projectile = {
+        id: now,
+        type: type,
+        x: enemy.x + enemy.width/2,
+        y: enemy.y + enemy.height/2,
+        vx: Math.cos(angle) * config.enemyProjectileSpeed,
+        vy: Math.sin(angle) * config.enemyProjectileSpeed,
+        damage: enemy.stats.atk * 0.7,
+        owner: enemy.id,
+        createdAt: now
+    };
+
+    gameState.projectiles.push(projectile);
+    
+    const element = document.createElement('div');
+    element.className = `projectile ${type}-projectile`;
+    element.id = `projectile-${projectile.id}`;
+    element.style.left = `${projectile.x}px`;
+    element.style.top = `${projectile.y}px`;
+    gameContainer.appendChild(element);
+}
+
+    
+        function checkEnemyDamage(enemy) {
+            if (!gameState.player || !gameState.player.stats) {
+        console.warn(`Jogador não definido em checkEnemyDamage para inimigo ${enemy.id}`);
+        return;
+    }
+    if (enemy.isBoss) {
+        const bossDamage = enemy.stats.atk * 0.8 - (player.stats.def || 0);
+        const finalDamage = Math.max(1, Math.round(bossDamage));
+        
+        if (distance < 80 && now - gameState.lastDamageTime > 1000) {
+            player.health -= finalDamage;
+            gameState.lastDamageTime = now;
+            showDamage(finalDamage, player.x, player.y, false, false);
+            addToCombatLog(`${enemy.name} esmagou você com ${finalDamage} de dano!`);
+            
+            if (player.health <= 0) gameOver();
+            updateUI();
+        }
+    }
+    const player = gameState.player;
+    const playerCenterX = player.x + player.width / 2;
+    const playerCenterY = player.y + player.height / 2;
+    const enemyCenterX = enemy.x + enemy.width / 2;
+    const enemyCenterY = enemy.y + enemy.height / 2;
+    
+    const distance = Math.sqrt(
+        Math.pow(playerCenterX - enemyCenterX, 2) +
+        Math.pow(playerCenterY - enemyCenterY, 2)
+    );
+    
+    const now = Date.now();
+    
+    if (distance < 60 && now - gameState.lastDamageTime > 500) {
+        if (player.invulnerable) return;
+        
+        const damage = Math.max(1, config.enemyDamage + gameState.currentRound - (player.stats.def || 0) / 2);
+        player.health -= damage;
+        gameState.lastDamageTime = now;
+        
+        showDamage(damage, player.x, player.y, false, false);
+        addToCombatLog(`${enemy.name} causou ${damage} de dano!`);
+        
+        if (player.health <= 0) {
+            player.health = 0;
+            gameOver();
+        }
+        
+        updateUI();
+    }
+        }
+    
+        function spawnBoss() {
+    const bossIndex = Math.floor((gameState.currentRound - 1) / config.bossSpawnInterval) % BOSSES.length;
+    const bossTemplate = BOSSES[bossIndex];
+    showBossIntro(bossTemplate);
+
+    // Parar áudio anterior e tocar tema do boss
+    document.querySelectorAll('.audio-theme').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+    const bossAudio = document.getElementById(bossTemplate.audio);
+    if (bossAudio) {
+        bossAudio.volume = 0.3;
+        bossAudio.loop = true;
+        bossAudio.play().catch(error => console.log('Reprodução bloqueada:', error));
+    }
+
+    // Posicionamento do boss
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    switch(side) {
+        case 0: x = Math.random() * config.mapWidth; y = 50; break;
+        case 1: x = config.mapWidth - 50; y = Math.random() * config.mapHeight; break;
+        case 2: x = Math.random() * config.mapWidth; y = config.mapHeight - 50; break;
+        case 3: x = 50; y = Math.random() * config.mapHeight; break;
+    }
+
+    // Criar boss
+    const boss = {
+        id: Date.now() + Math.random(),
+        name: bossTemplate.name,
+        x: x,
+        y: y,
+        width: 100,
+        height: 100,
+        stats: {
+            atk: bossTemplate.stats.atk * (1 + gameState.currentRound * 0.15),
+            def: bossTemplate.stats.def * (1 + gameState.currentRound * 0.1),
+            hp: bossTemplate.stats.hp * (1 + gameState.currentRound * 0.2),
+            spd: bossTemplate.stats.spd
+        },
+        health: bossTemplate.stats.hp * (1 + gameState.currentRound * 0.2),
+        maxHealth: bossTemplate.stats.hp * (1 + gameState.currentRound * 0.2),
+        theme: bossTemplate.theme,
+        ability: bossTemplate.ability,
+        isBoss: true,
+        lastAbilityTime: Date.now(),
+        phase: 1
+    };
+
+    // Criar elemento visual do boss
+    const bossElement = document.createElement('div');
+    bossElement.className = `boss ${bossTemplate.theme}`;
+    bossElement.id = `enemy-${boss.id}`;
+    bossElement.style.left = `${boss.x}px`;
+    bossElement.style.top = `${boss.y}px`;
+    
+    // Barra de vida do boss
+    const healthBar = document.createElement('div');
+    healthBar.className = 'health-bar enemy-health';
+    healthBar.innerHTML = '<div class="health-fill"></div>';
+    bossElement.appendChild(healthBar);
+    gameContainer.appendChild(bossElement);
+    if(bossIndex === 4) {
+        gameState.currentBossTheme = 'boss-theme-5';
+        
+        // Forçar atualização dos inimigos existentes
+        gameState.enemies.forEach(enemy => {
+            const element = document.getElementById(`enemy-${enemy.id}`);
+            if(element) {
+                element.className = `enemy ${BOSSES[4].minionType}`;
+                element.classList.add('boss5-minion');
+            }
+        });
+    }
+
+
+
+
+
+    if(bossIndex === 4) { // Se for o boss 5
+    const stopCycle = cycleBoss5Images(bossElement, bossTemplate);
+    
+    // Quando o boss morrer
+        
+        
+        
+        
+        
+        
+        
+    
+    boss.onDestroy = () => {
+        stopCycle();
+        if (bossAudio) {
+            bossAudio.pause();
+            bossAudio.currentTime = 0;
+        }
+        bossElement.remove();
+    };
+}
+    // Spawnar minions do boss
+    const minionsToSpawn = 3 + Math.floor(gameState.currentRound / 5);
+    for(let i = 0; i < minionsToSpawn; i++) {
+        const angle = (Math.PI * 2 * i) / minionsToSpawn;
+        const offset = 100;
+        
+        const minion = {
+            id: Date.now() + Math.random(),
+            x: boss.x + Math.cos(angle) * offset,
+            y: boss.y + Math.sin(angle) * offset,
+            width: 45,
+            height: 45,
+            stats: {
+                atk: boss.stats.atk * bossTemplate.minionStats.atkMultiplier,
+                def: boss.stats.def * bossTemplate.minionStats.defMultiplier,
+                hp: boss.stats.hp * bossTemplate.minionStats.hpMultiplier,
+                spd: boss.stats.spd * bossTemplate.minionStats.spdMultiplier
+            },
+            health: boss.stats.hp * bossTemplate.minionStats.hpMultiplier,
+            maxHealth: boss.stats.hp * bossTemplate.minionStats.hpMultiplier,
+            name: `${bossTemplate.name} Minion`,
+            theme: bossTemplate.theme,
+            minionType: bossTemplate.minionType,
+            isBossMinion: true,
+            lastRangedAttack: 0
+        };
+
+        // Elemento visual do minion
+        const minionElement = document.createElement('div');
+        minionElement.className = `enemy ${bossTemplate.minionType}`; // Adicione o tema
+        minionElement.id = `enemy-${minion.id}`;
+        minionElement.style.left = `${minion.x}px`;
+        minionElement.style.top = `${minion.y}px`;
+        if(bossIndex === 4) {
+    const stopMinionCycle = cycleMinionImages(minionElement, bossTemplate);
+    
+    // Adicionar limpeza quando o minion morrer
+    minion.onDestroy = () => {
+        stopMinionCycle();
+        minionElement.remove();
+    };
+}
+
+        // Barra de vida do minion
+        const minionHealthBar = document.createElement('div');
+        minionHealthBar.className = 'health-bar enemy-health';
+        minionHealthBar.innerHTML = '<div class="health-fill"></div>';
+        minionElement.appendChild(minionHealthBar);
+        gameContainer.appendChild(minionElement);
+
+        // Adicionar ao array de inimigos
+        gameState.enemies.push(minion);
+
+        // Configurar ataque à distância
+        gameState.enemyRangedAttackTimers[minion.id] = setInterval(() => {
+            if (gameState.gameActive && !gameState.gamePaused) {
+                enemyRangedAttack(minion);
+            }
+        }, config.enemyRangedAttackInterval);
+    }
+
+    // Adicionar boss ao array de inimigos
+    gameState.enemies.push(boss);
+    gameState.bossSpawned = true;
+
+    // Habilidades do boss
+    const abilityInterval = setInterval(() => {
+        if (!gameState.gameActive || boss.health <= 0) {
+            clearInterval(abilityInterval);
+            return;
+        }
+        
+        if (Date.now() - boss.lastAbilityTime > 15000) {
+            bossTemplate.ability();
+            boss.lastAbilityTime = Date.now();
+            
+            // Mudança de fase
+            if (boss.health <= boss.maxHealth * 0.5 && boss.phase === 1) {
+    boss.phase = 2;
+    boss.currentPhase = (boss.currentPhase + 1) % bossConfig.phaseImages.length; // Novo
+    bossElement.classList.add('boss-phase-change');
+    addToCombatLog(`${boss.name} entrou na Fase 2!`);
+    
+    // Forçar atualização de minions
+    gameState.enemies.filter(e => e.isBossMinion).forEach(minion => {
+        const element = document.getElementById(`enemy-${minion.id}`);
+        if(element) cycleMinionImages(element, bossConfig);
+    });
+}
+        }
+    }, 1000);
+
+    // Limpeza quando o boss morrer
+    boss.onDestroy = () => {
+        clearInterval(abilityInterval);
+        if (bossAudio) {
+            bossAudio.pause();
+            bossAudio.currentTime = 0;
+        }
+        bossElement.remove();
+    };
+
+    addToCombatLog(`🔥 ${boss.name} apareceu! ${bossTemplate.flavorText}`);
+    gameState.currentBossTheme = bossTemplate.theme;
+}
+function showAudioUnlockButton(audioElement) {
+    const unlockBtn = document.createElement('button');
+    unlockBtn.style.position = 'fixed';
+    unlockBtn.style.top = '20px';
+    unlockBtn.style.right = '20px';
+    unlockBtn.textContent = 'Ativar Som';
+    unlockBtn.onclick = () => {
+        audioElement.play();
+        unlockBtn.remove();
+    };
+    document.body.appendChild(unlockBtn);
+}
+
+function showBossIntro(boss) {
+  const introElement = document.getElementById('boss-intro');
+  const introImage = document.getElementById('boss-intro-image');
+  const introName = document.getElementById('boss-intro-name');
+
+  introImage.src = boss.introImage;
+  introName.textContent = boss.name;
+  
+  introElement.style.display = 'flex';
+  
+  // Resetar animação
+  setTimeout(() => {
+    introElement.style.animation = 'none';
+    void introElement.offsetHeight; // Trigger reflow
+    introElement.style.animation = 'bossIntro 3s forwards';
+  }, 50);
+
+  // Esconder após animação
+  setTimeout(() => {
+    introElement.style.display = 'none';
+  }, 3000);
+}
+        function updateRoundInfo() {
+            currentRoundElement.textContent = gameState.currentRound;
+            updateMinionsCounter();
+        }
+    
+        function updateMinionsCounter() {
+        minionsLeftElement.textContent = `${gameState.minionsDefeated}/${config.minionsPerRound}`;
+    }
+        
+        function checkRoundCompletion() {
+            const allEnemiesDefeated = gameState.enemies.length === 0;
+            if (!gameState.gameActive || gameState.gamePaused) return;
+            const isFinalRound = gameState.currentRound === 26;
+            const currentBoss = gameState.enemies.find(e => e.isFinalBoss);
+            if (currentBoss?.isFinalBoss) return;
+const totalEliminated = gameState.minionsDefeated + gameState.enemiesInSyringe; // ← Nova variável
+const isBossRound = gameState.currentRound > 1 && gameState.currentRound % config.bossSpawnInterval === 0;
+
+// Round normal
+if (!isBossRound) {
+    
+    if (totalEliminated >= gameState.totalEnemiesInRound) { // ← Condição modificada
+        if (gameState.enemies.length === 0) {
+            proceedToNextRound();
+        }
+    }
+}
+    // Round de boss
+    else {
+        const bossDefeated = gameState.bossDefeated;
+        const minionsDefeated = gameState.minionsDefeated >= config.minionsPerRound;
+        
+        if (!gameState.bossSpawned && minionsDefeated) {
+            spawnBoss();
+            gameState.bossSpawned = true;
+        }
+
+        if (bossDefeated && allEnemiesDefeated) {
+            proceedToNextRound();
+        }
+    }
+}
+
+
+
+function proceedToNextRound() {
+    gameState.minionsDefeated = 0;
+    gameState.totalEnemiesInRound = 0;
+    document.getElementById('syringe').style.display = 'none';
+    document.querySelector('.syringe-alert').style.display = 'none';
+    gameState.syringeActive = false;
+    gameState.currentBossTheme = '';
+    gameState.gameActive = false;
+    gameState.gamePaused = true;
+    gameState.bossSpawned = false;
+    gameState.bossDefeated = false;
+    // Atualiza UI de transição
+    showRoundTransition(gameState.currentRound, gameState.currentRound + 1);
+    gameState.projectiles.forEach(p => {
+        const element = document.getElementById(`projectile-${p.id}`);
+        if (element) element.remove();
+    });
+    gameState.projectiles = [];
+    
+    // Limpar intervalos de ataque
+    Object.values(gameState.enemyRangedAttackTimers).forEach(timer => clearInterval(timer));
+    gameState.enemyRangedAttackTimers = {};
+    setTimeout(() => {
+        // Resetar estados críticos
+        gameState.currentRound++;
+        gameState.minionsDefeated = 0;
+        gameState.bossDefeated = false;
+        
+        // Remover todos os inimigos residualmente
+        gameState.enemies.forEach(enemy => removeEnemy(enemy.id));
+        gameState.enemies = [];
+        
+        // Resetar upgrades temporários
+        if (gameState.player.tempAtkBoost) {
+            gameState.player.stats.atk -= gameState.player.tempAtkBoost;
+            gameState.player.tempAtkBoost = 0;
+        }
+        
+        // Preparar novo round
+        gameState.gameActive = true;
+        gameState.gamePaused = false;
+        startRound();
+        
+        // Atualizar UI
+        updateRoundInfo();
+        addToCombatLog(`Round ${gameState.currentRound} iniciado!`);
+        
+    }, 3000); // Delay de 3 segundos para transição
+}
+
+// Função auxiliar para mostrar transição de round
+function showRoundTransition(current, next) {
+    roundTransitionText.textContent = `Round ${current} Completo!`;
+    roundTransition.style.display = 'flex';
+    
+    setTimeout(() => {
+        roundTransitionText.textContent = `Round ${next} Começando...`;
+        gameContainer.classList.add('round-transition-effect');
+    }, 1500);
+    
+    setTimeout(() => {
+        roundTransition.style.display = 'none';
+        gameContainer.classList.remove('round-transition-effect');
+    }, 3000);
+}
+        function showRoundTransition(currentRound, nextRound) {
+            roundTransitionText.textContent = `Round ${currentRound} Completo!`;
+            roundTransition.style.display = 'flex';
+            
+            setTimeout(() => {
+                roundTransitionText.textContent = `Round ${nextRound} Começando!`;
+            }, 1500);
+            
+            setTimeout(() => {
+                roundTransition.style.display = 'none';
+            }, 3000);
+        }
+        function showVictory() {
+            toggleMute(true);
+            document.querySelectorAll('.audio-theme').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+    // 1. Parar totalmente o jogo
+    gameState.gameActive = false;
+    gameState.gamePaused = true;
+    
+    // 2. Remover elementos do jogo
+    document.querySelectorAll('.enemy, .projectile').forEach(element => element.remove());
+    
+    // 3. Mostrar tela de vitória CORRETAMENTE
+    victoryScreen.style.display = 'flex'; // <-- CSS deve estar com position: fixed
+    document.getElementById('game-container').style.display = 'block'; // Mantém container visível
+    
+    // 4. Atualizar dados
+    document.getElementById('final-money').textContent = gameState.money;
+    
+    // 5. Parar todos os áudios
+    document.querySelectorAll('.audio-theme').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+    setTimeout(() => {
+    location.reload(true); // Recarrega a página como um F5 após 15 segundos
+}, 5000);
+    console.log("Tela de vitória ativada com sucesso!");
+}
+    
+        function gameOver() {
+            gameState.projectiles.forEach(p => {
+            const element = document.getElementById(`projectile-${p.id}`);
+            if (element) element.remove();
+            });
+            gameState.projectiles = [];
+            finalRoundDisplay.textContent = gameState.currentRound;
+            gameOverScreen.style.display = 'flex';
+            addToCombatLog("GAME OVER! Você foi derrotado!");
+            gameState.gameActive = false;
+            setTimeout(() => {
+    location.reload(true); // Recarrega a página como um F5 após 15 segundos
+}, 5000);
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+            Object.values(gameState.enemyDamageTimers).forEach(timer => clearInterval(timer));
+            Object.values(gameState.enemyRangedAttackTimers).forEach(timer => clearInterval(timer));
+        }
+    
+function returnToMenu() {
+    location.reload();
+}
+        function restartGame() {
+            toggleMute(false);
+            resetGameState();
+            document.getElementById('victory-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+            initMenu();
+        }
+    
+        function handleMovement() {
+            if (!gameState.player) return;
+            let moved = false;
+            const baseSpeed = gameState.player.originalStats.spd; // ⚠️ Usar original, não stats.atual
+            
+            
+            if (gameState.keys['ArrowUp'] || gameState.keys['w']) {
+                gameState.player.y -= gameState.player.originalStats.spd;
+                gameState.player.facing = 'up';
+                moved = true;
+            }
+            if (gameState.keys['ArrowDown'] || gameState.keys['s']) {
+                gameState.player.y += gameState.player.originalStats.spd;
+                gameState.player.facing = 'down';
+                moved = true;
+            }
+            if (gameState.keys['ArrowLeft'] || gameState.keys['a']) {
+                gameState.player.x -= gameState.player.originalStats.spd;
+                gameState.player.facing = 'left';
+                moved = true;
+            }
+            if (gameState.keys['ArrowRight'] || gameState.keys['d']) {
+                gameState.player.x += gameState.player.originalStats.spd;
+                gameState.player.facing = 'right';
+                moved = true;
+            }
+            
+            gameState.player.x = Math.max(0, Math.min(gameState.player.x, config.mapWidth - gameState.player.width));
+            gameState.player.y = Math.max(0, Math.min(gameState.player.y, config.mapHeight - gameState.player.height));
+        }
+    
+        function playerAttack(enemy) {
+    const attackEffect = document.createElement('div');
+    attackEffect.className = 'attack-effect';
+    attackEffect.style.left = `${gameState.player.x + gameState.player.width/2 - 30}px`;
+    attackEffect.style.top = `${gameState.player.y + gameState.player.height/2 - 30}px`;
+    gameContainer.appendChild(attackEffect);
+
+    const playerCenter = {
+        x: gameState.player.x + gameState.player.width/2,
+        y: gameState.player.y + gameState.player.height/2
+    };
+
+    const enemyCenter = {
+        x: enemy.x + enemy.width/2,
+        y: enemy.y + enemy.height/2
+    };
+    
+    const distance = Math.sqrt(
+        Math.pow(playerCenter.x - enemyCenter.x, 2) +
+        Math.pow(playerCenter.y - enemyCenter.y, 2)
+    );
+
+    setTimeout(() => {
+        attackEffect.remove();
+    }, 500);
+
+    const isCritical = Math.random() < config.criticalChance;
+    let damage = calculateDamage(gameState.player, enemy, isCritical);
+    
+    enemy.health -= damage;
+    
+    showDamage(damage, enemy.x, enemy.y, isCritical, false);
+    
+    if (isCritical) {
+        addToCombatLog(`ATAQUE CRÍTICO! Você causou ${damage} de dano em ${enemy.name}!`);
+    } else {
+        addToCombatLog(`Você atacou ${enemy.name} e causou ${damage} de dano!`);
+    }
+    
+    if (enemy.health <= 0) {
+        enemy.health = 0;
+        
+        if (enemy.isBoss) {
+            gameState.bossDefeated = true;
+            addToCombatLog("CHEFÃO DERROTADO!");
+            removeEnemy(enemy.id);
+            checkRoundCompletion();
+        } else {
+             gameState.minionsDefeated++;
+            updateMinionsCounter();
+        }
+
+        
+        const moneyDrop = enemy.isBoss ? config.moneyDrop.boss : config.moneyDrop.minion;
+        gameState.player.money += moneyDrop;
+        moneyDisplay.textContent = gameState.player.money;
+        
+        const xpGain = enemy.isBoss ? 50 : 10;
+        addXp(xpGain);
+        
+        addToCombatLog(`Você ganhou $${moneyDrop} e ${xpGain} XP!`);
+        
+        if (!enemy.isBoss && Math.random() < 0.3) {
+            const heal = Math.floor(gameState.player.maxHealth * 0.25);
+            gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + heal);
+            showDamage(`+${heal}`, gameState.player.x, gameState.player.y, false, true);
+            addToCombatLog(`Você encontrou um shake de proteína e recuperou ${heal} de vida!`);
+        }
+        
+        removeEnemy(enemy.id);
+        checkRoundCompletion();
+    }
+    console.log(`Dano em ${enemy.isBoss ? 'BOSS' : 'inimigo'}:`, damage, 'Vida restante:', enemy.health);
+    updateUI();
+}
+    
+        function showDamage(value, x, y, isCritical = false, isHeal = false) {
+            const damageText = document.createElement('div');
+            damageText.className = 'damage-effect';
+            damageText.textContent = isHeal ? `+${value}` : `-${value}`;
+            damageText.style.left = `${x}px`;
+            damageText.style.top = `${y}px`;
+            
+            if (isCritical) {
+                damageText.classList.add('critical-effect');
+            } else if (isHeal) {
+                damageText.style.color = '#4CAF50';
+            }
+            
+            gameContainer.appendChild(damageText);
+            
+            setTimeout(() => {
+                damageText.remove();
+            }, 1000);
+        }
+    
+        function useSpecial() {
+            const now = Date.now();
+            if (gameState.player.specialCooldown > 0) return;
+            
+            const special = gameState.player.special;
+            
+            if (!special || typeof special.effect !== 'function') {
+                addToCombatLog("Habilidade especial não disponível!");
+                return;
+            }
+            
+            const message = special.effect(gameState.player, null);
+            
+            gameState.player.specialCooldown = special.cooldown;
+            addToCombatLog(message);
+            
+            if (special.duration) {
+                gameState.specialActive = true;
+                gameState.specialTurnsLeft = special.duration;
+                
+                if (special.revert) {
+                    setTimeout(() => {
+                        special.revert(gameState.player);
+                        addToCombatLog(`O efeito de ${special.name} acabou.`);
+                    }, special.duration * 1000);
+                }
+            }
+            
+            updateUI();
+        }
+    
+        function calculateDamage(attacker, defender, isCritical = false) {
+            if (defender.invulnerable) return 0;
+            
+            let damage = Math.max(1, attacker.stats.atk - (defender.stats.def / 2));
+            
+            if (isCritical) {
+                damage = Math.floor(damage * config.criticalMultiplier);
+            }
+            
+            return Math.max(1, damage);
+        }
+    // Debug: Verificar áudios ativos
+function checkActiveAudio() {
+    const activeAudio = Array.from(document.querySelectorAll('audio')).filter(a => !a.paused);
+    console.log('Áudios ativos:', activeAudio);
+}
+
+// Chamar periodicamente para monitorar
+setInterval(checkActiveAudio, 5000);
+        function removeEnemy(id) {
+    const enemyIndex = gameState.enemies.findIndex(e => e.id === id);
+    if (enemyIndex === -1) return;
+
+    const enemy = gameState.enemies[enemyIndex];
+    
+    // Verificação específica para o Boss 5
+    if (enemy.isBoss && enemy.theme === "boss-theme-5" && enemy.health <= 0) {
+        console.log("✅ Boss 5 Derrotado - Parando todos os áudios");
+
+        // 1. Parar TODOS os áudios do jogo
+        const allAudioElements = document.getElementsByTagName('audio');
+        Array.from(allAudioElements).forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+
+        // 2. Parar áudios dinâmicos das fases
+        if (enemy.phaseAudios && Array.isArray(enemy.phaseAudios)) {
+            enemy.phaseAudios.forEach(audio => {
+                if (audio instanceof HTMLAudioElement) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            });
+            enemy.phaseAudios = [];
+        }
+
+        // 3. Parar quaisquer instâncias de áudio ativas
+        const allAudioInstances = document.querySelectorAll('audio');
+        allAudioInstances.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+
+        // 4. Limpar temporizadores de ciclo de fases
+        if (enemy.phaseInterval) {
+            clearInterval(enemy.phaseInterval);
+        }
+
+        // 5. Remover elementos visuais
+        const bossElement = document.getElementById(`enemy-${enemy.id}`);
+        if (bossElement) {
+            bossElement.style.animation = 'fadeOut 1s';
+            setTimeout(() => bossElement.remove(), 1000);
+        }
+
+        // 6. Remover botões de desbloqueio de áudio
+        document.querySelectorAll('button[onclick*="audio.play()"]').forEach(btn => btn.remove());
+
+        // 7. Chamar vitória
+        showVictory();
+        return;
+    }
+
+    // Código normal de remoção para outros inimigos
+    const enemyElement = document.getElementById(`enemy-${id}`);
+    if (enemyElement) enemyElement.remove();
+
+    // Limpar intervalos
+    if (gameState.enemyDamageTimers[id]) {
+        clearInterval(gameState.enemyDamageTimers[id]);
+        delete gameState.enemyDamageTimers[id];
+    }
+
+    if (gameState.enemyRangedAttackTimers[id]) {
+        clearInterval(gameState.enemyRangedAttackTimers[id]);
+        delete gameState.enemyRangedAttackTimers[id];
+    }
+
+    // Atualizar estado do jogo
+    gameState.enemies.splice(enemyIndex, 1);
+    gameState.projectiles = gameState.projectiles.filter(p => p.owner !== id);
+
+    // Atualizar UI se for minion
+    if (!enemy.isBoss && gameState.syringeActive) {
+        document.getElementById('syringe-count').textContent = gameState.enemiesInSyringe;
+    }
+}
+        function updatePlayerPosition() {
+            playerElement.style.left = `${gameState.player.x}px`;
+            playerElement.style.top = `${gameState.player.y}px`;
+        }
+    
+// Substituir a função moveEnemiesTowardsPlayer() por esta versão melhorada
+// Substitua a função inteira por esta versão
+function moveEnemiesTowardsPlayer() {
+    const REPEL_FORCE = 0.4;
+    const MIN_DISTANCE = 60;
+    const SYRINGE_CENTER = { 
+        x: config.mapWidth/2, 
+        y: config.mapHeight/2 
+    };
+
+    // Verificar se é round de boss
+    const isBossRound = gameState.currentRound % config.bossSpawnInterval === 0;
+    const bossPhase = gameState.enemies.find(e => e.isBoss)?.phase || 1;
+
+    gameState.enemies.forEach((enemy, index) => {
+        // Definir alvo prioritário
+        let target;
+        if (isBossRound) {
+            // Durante rounds de boss, todos os inimigos perseguem o jogador
+            target = gameState.player;
+            
+            // Bosses se movem 20% mais rápido na fase 2
+            const speedMultiplier = (bossPhase === 2 && enemy.isBoss) ? 1.2 : 1;
+            enemy.stats.spd = (enemy.originalSpd || config.enemySpeed) * speedMultiplier;
+        } else {
+            // Fora de rounds de boss: 70% seringa, 30% jogador
+            target = Math.random() < 0.7 ? SYRINGE_CENTER : gameState.player;
+        }
+
+        // Calcular direção
+        const dx = target.x - enemy.x;
+        const dy = target.y - enemy.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Movimento normal
+        if (dist > 0) {
+            const baseSpeed = enemy.isBoss ? 
+                (config.enemySpeed * 0.8) : 
+                (enemy.stats.spd || config.enemySpeed);
+            
+            enemy.x += (dx / dist) * baseSpeed * 0.8;
+            enemy.y += (dy / dist) * baseSpeed * 0.8;
+        }
+
+        // Lógica da seringa (só se não for round de boss)
+        if(gameState.syringeActive && !isBossRound) {
+            const syringeDx = enemy.x + enemy.width/2 - SYRINGE_CENTER.x;
+            const syringeDy = enemy.y + enemy.height/2 - SYRINGE_CENTER.y;
+            const syringeDist = Math.sqrt(syringeDx*syringeDx + syringeDy*syringeDy);
+
+            if(syringeDist < config.syringeRadius) {
+                if(enemy.isBoss) {
+                    addToCombatLog("O BOSS CONTAMINOU A SERINGA!");
+                    showDamage("💀", SYRINGE_CENTER.x, SYRINGE_CENTER.y);
+                    gameOver();
+                    return;
+                }
+                
+                gameState.minionsDefeated++;
+                gameState.enemiesInSyringe++;
+                
+                // Efeito visual
+                const plusOne = document.createElement('div');
+                plusOne.className = 'syringe-count-effect';
+                plusOne.textContent = '+1';
+                plusOne.style.left = `${SYRINGE_CENTER.x}px`;
+                plusOne.style.top = `${SYRINGE_CENTER.y}px`;
+                gameContainer.appendChild(plusOne);
+                
+                // Atualizar UI
+                document.getElementById('syringe-count').textContent = gameState.enemiesInSyringe;
+                document.getElementById('syringe-count').style.color = '#ff0000';
+                setTimeout(() => {
+                    document.getElementById('syringe-count').style.color = 'white';
+                }, 200);
+                
+                // Remover inimigo
+                removeEnemy(enemy.id);
+                
+                // Verificar limite da seringa
+                if(gameState.enemiesInSyringe >= config.syringeLimit) {
+                    addToCombatLog("SERINGA SUPERLOTADA!");
+                    showDamage("💀", SYRINGE_CENTER.x, SYRINGE_CENTER.y);
+                    gameOver();
+                    return;
+                }
+            }
+        }
+
+        // Repulsão entre inimigos
+        gameState.enemies.forEach((other, otherIndex) => {
+            if (index !== otherIndex) {
+                const ox = other.x - enemy.x;
+                const oy = other.y - enemy.y;
+                const odist = Math.sqrt(ox * ox + oy * oy);
+
+                if (odist < MIN_DISTANCE) {
+                    const force = (MIN_DISTANCE - odist) / MIN_DISTANCE * REPEL_FORCE;
+                    enemy.x -= (ox / odist) * force;
+                    enemy.y -= (oy / odist) * force;
+                }
+            }
+        });
+
+        // Manter dentro dos limites do mapa
+        enemy.x = Math.max(30, Math.min(enemy.x, config.mapWidth - enemy.width - 30));
+        enemy.y = Math.max(30, Math.min(enemy.y, config.mapHeight - enemy.height - 30));
+
+        // Atualizar minions do Boss 5
+        if(enemy.isBossMinion && gameState.currentBossTheme === 'boss-theme-5') {
+            const boss = gameState.enemies.find(e => e.isBoss);
+            if(boss && boss.currentPhase) {
+                const minionElement = document.getElementById(`enemy-${enemy.id}`);
+                if(minionElement) {
+                    minionElement.style.backgroundImage = `url('${BOSSES[4].minionImages[boss.currentPhase]}')`;
+                }
+            }
+        }
+    });
+}
+    
+function moveProjectiles() {
+    const now = Date.now();
+    const toRemove = [];
+    const playerCenter = {
+        x: gameState.player.x + gameState.player.width/2,
+        y: gameState.player.y + gameState.player.height/2
+    };
+
+    gameState.projectiles.forEach((p, index) => {
+        const element = document.getElementById(`projectile-${p.id}`);
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Atualizar posição visual
+        if (element) {
+            element.style.left = `${p.x}px`;
+            element.style.top = `${p.y}px`;
+        }
+
+        // Calcular centro do projétil
+        const projCenter = {
+            x: p.x + 15,
+            y: p.y + 15
+        };
+
+        // Verificar colisão com jogador
+        const dx = projCenter.x - playerCenter.x;
+        const dy = projCenter.y - playerCenter.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 25 && !gameState.player.invulnerable && p.owner !== 'player') {
+            // Aplicar dano e efeitos
+            gameState.player.health -= p.damage;
+            showDamage(p.damage, playerCenter.x, playerCenter.y);
+            
+            // Efeitos especiais
+            if(p.type === 'soda') {
+                gameState.player.stats.spd *= 0.7;
+                setTimeout(() => gameState.player.stats.spd /= 0.7, 3000);
+                addToCombatLog("Refrigerante pegajoso! Velocidade reduzida!");
+            }
+            if(p.type === 'burger') {
+                const dotDamage = setInterval(() => {
+                    gameState.player.health -= 2;
+                    showDamage(2, playerCenter.x, playerCenter.y);
+                }, 1000);
+                setTimeout(() => clearInterval(dotDamage), 5000);
+            }
+            
+            toRemove.push(index);
+            element?.remove();
+        }
+
+        // Remover projéteis fora da tela ou expirados
+        if (p.x < -50 || p.x > config.mapWidth + 50 || 
+            p.y < -50 || p.y > config.mapHeight + 50 ||
+            now - p.createdAt > 3000) {
+            toRemove.push(index);
+            element?.remove();
+        }
+    });
+
+    // Remover projéteis marcados
+    toRemove.reverse().forEach(i => gameState.projectiles.splice(i, 1));
+}
+
+    
+        function updatePositions() {
+            updatePlayerPosition();
+    
+    gameState.enemies.forEach(enemy => {
+        const element = document.getElementById(`enemy-${enemy.id}`);
+        if (element) {
+            element.style.left = `${Math.round(enemy.x)}px`;
+            element.style.top = `${Math.round(enemy.y)}px`;
+            
+            const healthPercent = (enemy.health / enemy.maxHealth) * 100;
+            element.querySelector('.health-fill').style.width = `${healthPercent}%`;
+        } else {
+            console.warn(`Elemento do inimigo ${enemy.id} não encontrado no DOM em updatePositions.`);
+            removeEnemy(enemy.id);
+        }
+    });
+
+    gameState.upgradePoints.forEach(point => {
+        if (point.messageElement) {
+            point.messageElement.style.left = `${point.x - 50}px`;
+            point.messageElement.style.top = `${point.y - 40}px`;
+        }
+    });
+        }
+    
+        function updateUI() {
+            const healthPercent = (gameState.player.health / gameState.player.maxHealth) * 100;
+            document.getElementById('player-health-bar').style.width = `${healthPercent}%`;
+            document.getElementById('player-health-display').textContent = 
+                `${gameState.player.health}/${gameState.player.maxHealth}`;
+            
+            const xpNeeded = config.xpPerLevel * gameState.level;
+            const xpPercent = (gameState.xp / xpNeeded) * 100;
+            xpBar.style.width = `${xpPercent}%`;
+            xpDisplay.textContent = `Level ${gameState.level}`;
+            
+            moneyDisplay.textContent = gameState.player.money;
+            const currentSpeed = gameState.player.stats.spd + 
+                       (gameState.player.upgrades.speed * config.upgradeAmounts.speed) + 
+                       (gameState.player.tempSpdBonus || 0);
+    
+             console.log("Velocidade atualll:", currentSpeed.toFixed(1));
+        }
+    
+        function addXp(amount) {
+            gameState.xp += amount;
+            const xpNeeded = config.xpPerLevel * gameState.level;
+            
+            if (gameState.xp >= xpNeeded) {
+                gameState.level++;
+                gameState.xp -= xpNeeded;
+                addToCombatLog(`Level Up! Você atingiu o nível ${gameState.level}!`);
+            }
+            
+            updateUI();
+        }
+    
+        function addToCombatLog(message) {
+            gameState.combatLog.push(message);
+            if (gameState.combatLog.length > 5) {
+                gameState.combatLog.shift();
+            }
+            
+            combatLogElement.innerHTML = gameState.combatLog.map(msg => `<p>${msg}</p>`).join('');
+            combatLogElement.scrollTop = combatLogElement.scrollHeight;
+        }
+    
+        function handleKeyDown(e) {
+            if (upgradeMenu.style.display === 'block' && e.key !== 'Escape') {
+                e.preventDefault();
+                return;
+            }
+            
+            gameState.keys[e.key] = true;
+            
+            if (e.key === ' ') {
+                e.preventDefault();
+                const now = Date.now();
+                
+                if (now - gameState.lastPlayerAttackTime >= config.playerAttackInterval) {
+                    gameState.enemies.forEach(enemy => {
+                        const playerCenterX = gameState.player.x + gameState.player.width/2;
+                        const playerCenterY = gameState.player.y + gameState.player.height/2;
+                        const enemyCenterX = enemy.x + enemy.width/2;
+                        const enemyCenterY = enemy.y + enemy.height/2;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(playerCenterX - enemyCenterX, 2) +
+                            Math.pow(playerCenterY - enemyCenterY, 2)
+                        );
+                        
+                        if (distance < 40) {
+                            playerAttack(enemy);
+                        }
+                    });
+                    gameState.lastPlayerAttackTime = now;
+                }
+            }
+            
+            if (e.key === 's' || e.key === 'S') {
+                if (gameState.player.special && typeof gameState.player.special.effect === 'function') {
+                    useSpecial();
+                } else {
+                    addToCombatLog("Habilidade especial não disponível!");
+                }
+            }
+            
+            if ((e.key === 'h' || e.key === 'H') && isOnUpgradePoint) {
+                e.preventDefault();
+                openUpgradeMenu();
+            }
+            
+            if (e.key === 'Escape' && upgradeMenu.style.display === 'block') {
+                e.preventDefault();
+                closeUpgradeMenu();
+            }
+        }
+    
+        function handleKeyUp(e) {
+            gameState.keys[e.key] = false;
+        }
+    
+// Substituir o gameLoop() por esta versão otimizada
+function gameLoop(timestamp) {
+    if (!gameState.gameActive || gameState.gamePaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    // Processar movimentos em taxa fixa (60fps)
+    handleMovement();
+    
+    // Processar IA e física em taxa reduzida (30fps)
+    if (!gameState.lastPhysicsUpdate || timestamp - gameState.lastPhysicsUpdate > 33) {
+        moveEnemiesTowardsPlayer();
+        moveProjectiles();
+        checkUpgradePointCollision();
+        gameState.lastPhysicsUpdate = timestamp;
+    }
+
+    // Renderizar em taxa máxima
+    updatePositions();
+    updateUI();
+    
+    requestAnimationFrame(gameLoop);
+}
+    
+        function checkEnemyCollision(enemy1, enemy2) {
+            const dx = enemy1.x - enemy2.x;
+            const dy = enemy1.y - enemy2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < (enemy1.width + enemy2.width)/2 + 10;
+        }
+    
+        window.onload = function() {
+            document.getElementById('game-container').style.display = 'none';
+            initMenu();
+        };
+        // Adicionar estas funções para melhor feedback
+function showDamage(value, x, y, isCritical = false, isHeal = false) {
+    const damageText = document.createElement('div');
+    damageText.className = 'damage-effect';
+    damageText.textContent = (isHeal ? '+' : '-') + Math.round(value);
+    damageText.style.left = `${x}px`;
+    damageText.style.top = `${y - 20}px`;
+    
+    if (isCritical) {
+        damageText.classList.add('critical-effect');
+        damageText.textContent += '!';
+    } else if (isHeal) {
+        damageText.style.color = '#4CAF50';
+    }
+
+    gameContainer.appendChild(damageText);
+    
+    // Animação e remoção
+    damageText.animate([
+        { opacity: 1, transform: 'translateY(0)' },
+        { opacity: 0, transform: 'translateY(-50px)' }
+    ], {
+        duration: 1000,
+        easing: 'ease-out'
+    }).onfinish = () => damageText.remove();
+}
+
+console.log('Carregando imagem do minion:', bossConfig.minionImages[0]);
+new Image().src = bossConfig.minionImages[0];
+    </script>
+</body>
+</html>
