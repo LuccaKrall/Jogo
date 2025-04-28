@@ -1030,9 +1030,128 @@
     50% { transform: scale(1.1); }
     100% { transform: scale(1); }
 }
+/* Controles Mobile - Landscape */
+@media (max-width: 1024px) and (orientation: landscape) {
+    #mobile-controls {
+        display: flex !important;
+        position: fixed;
+        bottom: 15px;
+        left: 15px;
+        right: 15px;
+        justify-content: space-between;
+        gap: 15px;
+        pointer-events: all;
+        opacity: 1 !important;
+    }
+
+    #joystick-container {
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        backdrop-filter: blur(5px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    #joystick {
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #attack-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5em;
+        background: rgba(255, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+
+    #game-container {
+        transform: scale(1);
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: hidden;
+    }
+
+    #player {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .enemy {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .boss {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    #combat-log {
+        bottom: 120px;
+        left: 10px;
+        width: 95%;
+        height: 100px;
+        font-size: 0.8em;
+    }
+
+    #syringe {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
 /* Responsividade */
    /* Controles Mobile */
+   
    @media (max-width: 768px) {
+#mobile-controls {
+    display: none; /* Inicialmente oculto */
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    gap: 20px;
+    align-items: center;
+}
+
+            #joystick-container {
+                width: 90px;
+                height: 90px;
+            }
+
+
+        #joystick {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            top: 25px;
+            left: 25px;
+            transition: transform 0.1s;
+            touch-action: none;
+        }
+
+        #attack-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            backdrop-filter: blur(10px);
+            pointer-events: all;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
     #game-container {
         width: 100vw !important;
         height: 100vh !important;
@@ -1182,7 +1301,87 @@
         font-size: 0.8em;
     }
 }
+/* Ajustes para telas médias */
+@media (max-width: 1024px) {
+    #game-container {
+        transform: scale(0.7);
+    }
+    
+    .class-card {
+        width: 180px;
+        padding: 15px;
+    }
+}
 
+/* Ajustes para mobile */
+@media (max-width: 768px) {
+    #game-container {
+        transform: scale(0.6);
+    }
+    
+    #player {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .enemy {
+        width: 30px !important;
+        height: 30px !important;
+    }
+    
+    .boss {
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    #combat-log {
+        width: 90%;
+        font-size: 0.8em;
+        bottom: 120px;
+    }
+}
+
+/* Ajustes para telas muito pequenas */
+@media (max-width: 480px) {
+    #game-container {
+        transform: scale(0.5);
+    }
+    
+    #main-menu h1 {
+        font-size: 2.5em;
+    }
+    
+    .class-card {
+        width: 150px;
+        font-size: 0.9em;
+    }
+}
+    /* Feedback visual para toques */
+#attack-btn:active {
+    transform: scale(0.9) !important;
+    background: rgba(255, 0, 0, 0.8) !important;
+}
+
+.attack-icon {
+    display: block;
+    font-size: 1.8em;
+    margin-bottom: 5px;
+}
+
+.attack-text {
+    display: block;
+    font-size: 0.8em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Prevenir zoom indesejado */
+html {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overflow: hidden;
+}
     </style>
     <audio id="boss-theme"></audio>
 </head>
@@ -1191,8 +1390,12 @@
     <div id="mobile-controls">
         <div id="joystick-container">
             <div id="joystick"></div>
+            <div id="joystick-area"></div>
         </div>
-        <button id="attack-btn">⚔️ Atacar</button>
+        <button id="attack-btn">
+            <span class="attack-icon">⚔️</span>
+            <span class="attack-text">Atacar</span>
+        </button>
     </div>
     <!-- Menu Inicial -->
     <audio class="audio-theme" id="boss1-theme" src="audios/carianiyep.mp3"></audio>
@@ -1439,25 +1642,70 @@ function handleJoystickStart(e) {
     };
 }
 
+// Atualizar a função handleJoystickMove
 function handleJoystickMove(e) {
     if (!joystickActive) return;
     
     const touch = e.touches[0];
-    const deltaX = touch.clientX - joystickCenter.x;
-    const deltaY = touch.clientY - joystickCenter.y;
+    const rect = joystickContainer.getBoundingClientRect();
+    const containerX = rect.left + rect.width/2;
+    const containerY = rect.top + rect.height/2;
+    
+    const deltaX = touch.clientX - containerX;
+    const deltaY = touch.clientY - containerY;
+    const distance = Math.min(40, Math.hypot(deltaX, deltaY));
     const angle = Math.atan2(deltaY, deltaX);
-    const distance = Math.min(50, Math.hypot(deltaX, deltaY));
     
     // Atualizar posição do joystick
-    joystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
+    joystick.style.transform = `translate(
+        ${distance * Math.cos(angle)}px, 
+        ${distance * Math.sin(angle)}px
+    )`;
     
-    // Atualizar direção do movimento
-    gameState.keys['ArrowUp'] = deltaY < -20;
-    gameState.keys['ArrowDown'] = deltaY > 20;
-    gameState.keys['ArrowLeft'] = deltaX < -20;
-    gameState.keys['ArrowRight'] = deltaX > 20;
+    // Calcular direção com deadzone
+    const deadzone = 15;
+    gameState.keys = {
+        'ArrowUp': deltaY < -deadzone,
+        'ArrowDown': deltaY > deadzone,
+        'ArrowLeft': deltaX < -deadzone,
+        'ArrowRight': deltaX > deadzone
+    };
 }
 
+// Adicionar suporte a toque simultâneo
+let activeTouches = {};
+
+document.addEventListener('touchstart', (e) => {
+    Array.from(e.touches).forEach(touch => {
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (element === attackBtn) {
+            activeTouches[touch.identifier] = 'attack';
+            handleAttack();
+        } else if (element === joystickContainer) {
+            activeTouches[touch.identifier] = 'joystick';
+            handleJoystickStart(e);
+        }
+    });
+});
+
+document.addEventListener('touchend', (e) => {
+    Array.from(e.changedTouches).forEach(touch => {
+        if (activeTouches[touch.identifier] === 'joystick') {
+            handleJoystickEnd();
+        }
+        delete activeTouches[touch.identifier];
+    });
+});
+// Verificar orientação do dispositivo
+function checkOrientation() {
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+    if (!isLandscape && window.innerWidth <= 1024) {
+        alert("Por favor, gire seu dispositivo para o modo paisagem para jogar!");
+    }
+}
+
+window.addEventListener('resize', checkOrientation);
+checkOrientation();
 function handleJoystickEnd() {
     joystickActive = false;
     joystick.style.transform = 'translate(0, 0)';
@@ -3607,18 +3855,24 @@ function showDamage(value, x, y, isCritical = false, isHeal = false) {
 console.log('Carregando imagem do minion:', bossConfig.minionImages[0]);
 new Image().src = bossConfig.minionImages[0];
    // Função de ajuste de escala responsiva
-function handleResponsiveScaling() {
+   function handleResponsiveScaling() {
     const gameWrapper = document.getElementById('game-container');
     const baseWidth = 1024;
     const baseHeight = 920;
     const scale = Math.min(
         window.innerWidth / baseWidth,
         window.innerHeight / baseHeight
-    );
+    ) * 0.9; // Redução adicional
     
     gameWrapper.style.transform = `scale(${scale})`;
-    gameWrapper.style.transformOrigin = 'center top';
+    gameWrapper.style.transformOrigin = 'center center';
 }
+
+// Atualizar a cada mudança de tamanho
+window.addEventListener('resize', () => {
+    handleResponsiveScaling();
+    adjustDynamicElements();
+})
 
 // Atualizar no carregamento e redimensionamento
 window.addEventListener('load', handleResponsiveScaling);
